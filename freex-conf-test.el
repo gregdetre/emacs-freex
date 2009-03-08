@@ -2,11 +2,14 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; test version of freex-conf. modify then run this with 
-; 'emacs -q -l freex-conf-test.el'
+; 'emacs -q -l freex-conf-test.el' if you want to load this automatically
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Add freex scripts (lisp and python files) to the load path
-(add-to-list 'load-path "/Users/greg/freex/scripts")
+(require 'freex)
+(require 'freex-hiert)
+
+;; Add freex scripts (lisp and python files) to the load path ; xxx
+(add-to-list 'load-path "/Users/greg/elisp/freex/")
 
 ;; Load pymacs
 (autoload 'pymacs-load "pymacs" nil t)
@@ -14,11 +17,11 @@
 (autoload 'pymacs-apply "pymacs")
 (autoload 'pymacs-call "pymacs")
 (eval-after-load "pymacs"
-  '(add-to-list 'pymacs-load-path "/Users/greg/elisp/freex/"))
+  '(add-to-list 'pymacs-load-path "/Users/greg/elisp/freex/")) ;; xxx
 
 ;; Specify where the freex .db file and its .freex (or .muse) friends
 ;; will live.  (Make sure this directory exists.)
-(setq freex-mode-dir "/Users/greg/elisp/freex/testdocs/")
+(setq freex-mode-dir "/Users/greg/elisp/freex/testdocs/") ; xxx
 
 ;; Set the file extension that identifies freex files
 (setq freex-mode-ext "freex")
@@ -65,7 +68,7 @@
 (setq freex-content-storage "mirror-files-to-db")
 
 ;; Get Freex mode ready to go
-(load "/Users/greg/elisp/freex/freex-mode.el")
+(load "/Users/greg/elisp/freex/freex-mode.el") ; xxx
 
 ;; These next lines tell the database to update itself automatically
 ;; if there are any new files in the freex data directory, every time
@@ -90,7 +93,12 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; optional keyboard shortcuts that could interfere with
-;; other emacs modes
+;; other emacs modes ; xxx
+
+;; i have C-l for find-file and M-l for freex-find-file
+(global-set-key [(meta l)] 'freex-meta-find)
+(global-set-key [(alt l)] 'freex-meta-find)
+(global-set-key [(hyper l)] 'freex-meta-find)
 
 ;; Otherwise implicit links will be turned off
 (setq freex-enable-implicit-links t)

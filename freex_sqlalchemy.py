@@ -654,11 +654,12 @@ def update_implicit_link_regexp():
 
     # only bother with the regexes if we're in emacs (i.e. use_lisp = True) 
     # AND emacs wants us to
-    if fsqa.use_lisp and lisp.freex_enable_implicit_links:
-            # xxx - cheat and exit so it works without hyperlinks with
-            # lame mac python 2.5 regex overflow bug
-            impLinkRegexp = re.compile('', re.MULTILINE)
-            return
+    if fsqa.use_lisp and not lisp.freex_enable_implicit_links.value():
+
+        # xxx - cheat and exit so it works without hyperlinks with
+        # lame mac python 2.5 regex overflow bug
+        impLinkRegexp = re.compile('', re.MULTILINE)
+        return
     
     # get and sort the aliases
     aliases = get_all_aliases()

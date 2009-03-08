@@ -6,7 +6,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Add freex scripts (lisp and python files) to the load path
-(add-to-list 'load-path "/path/to/freex/scripts")
+(add-to-list 'load-path "/Users/greg/freex/scripts")
 
 ;; Load pymacs
 (autoload 'pymacs-load "pymacs" nil t)
@@ -14,11 +14,11 @@
 (autoload 'pymacs-apply "pymacs")
 (autoload 'pymacs-call "pymacs")
 (eval-after-load "pymacs"
-  '(add-to-list 'pymacs-load-path "/home/greg/elisp/freex/"))
+  '(add-to-list 'pymacs-load-path "/Users/greg/elisp/freex/"))
 
 ;; Specify where the freex .db file and its .freex (or .muse) friends
 ;; will live.  (Make sure this directory exists.)
-(setq freex-mode-dir "/home/greg/elisp/freex/testdocs/")
+(setq freex-mode-dir "/Users/greg/elisp/freex/testdocs/")
 
 ;; Set the file extension that identifies freex files
 (setq freex-mode-ext "freex")
@@ -65,7 +65,7 @@
 (setq freex-content-storage "mirror-files-to-db")
 
 ;; Get Freex mode ready to go
-(load "/home/greg/elisp/freex/freex-mode.el")
+(load "/Users/greg/elisp/freex/freex-mode.el")
 
 ;; These next lines tell the database to update itself automatically
 ;; if there are any new files in the freex data directory, every time
@@ -86,3 +86,48 @@
 
 ;; Otherwise implicit links will be turned off
 (setq freex-enable-implicit-links t)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; optional keyboard shortcuts that could interfere with
+;; other emacs modes
+
+;; Otherwise implicit links will be turned off
+(setq freex-enable-implicit-links t)
+
+(define-key freex-mode-map [(control =)] 'freex-embed-all-tag-children)
+
+(define-key freex-mode-map "\M-s" 'save-buffer)
+
+(define-key freex-mode-map "\M-DEL" 'backward-kill-word)
+
+;; make it a little more visible than the default 20
+(setq freex-embed-color-step 25)
+
+;; makes find-alias etc. case-insensitive
+(setq completion-ignore-case t)
+
+(define-key minibuffer-local-isearch-map (quote [67108921])
+   (lookup-key minibuffer-local-isearch-map "\C-s"))
+
+(define-key freex-mode-map (kbd "RET") 'freex-hiert-newline-and-indent)
+(define-key freex-mode-map [(shift return)] 'newline)
+
+(define-key freex-mode-map [(meta return)]
+  'freex-meta-define-new-or-insert-metadata)
+
+(define-key freex-mode-map [(meta shift return)]
+  'freex-meta-edit-tag-parents-in-minibuffer)
+
+(define-key freex-mode-map "\M-." 'freex-hiert-in2)
+(define-key freex-mode-map "\M-," 'freex-hiert-out2)
+
+(define-key freex-mode-map
+  (quote [201326641]) ;; [(control meta 1)]
+  'freex-fontify-insert-sect-element-1)
+(define-key freex-mode-map
+  (quote [201326642]) ;; [(control meta 2)]
+  'freex-fontify-insert-sect-element-2)
+(define-key freex-mode-map
+  (quote [201326643]) ;; [(control meta 3)]
+  'freex-fontify-insert-sect-element-3)

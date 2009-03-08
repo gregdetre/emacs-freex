@@ -1,0 +1,7 @@
+this is the second test. embeds third-a and third-b
+
+<file>test3a.txt</file>
+
+<file>test3b.txt</file>
+
+

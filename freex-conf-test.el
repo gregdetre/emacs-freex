@@ -84,3 +84,5 @@
           'freex-meta-parse-alias-into-tag-parents)
 
 
+;; Otherwise implicit links will be turned off
+(setq freex-enable-implicit-links t)

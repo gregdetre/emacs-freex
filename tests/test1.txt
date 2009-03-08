@@ -1,0 +1,3 @@
+this is the first test. embeds second
+
+<file>test2.txt</file>

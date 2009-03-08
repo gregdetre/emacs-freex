@@ -1,0 +1,6 @@
+#!/bin/tcsh
+
+# python freex_sqlalchemy_test.py -v
+# testoob freex_sqlalchemy_test.py --verbose --immediate --debug
+
+testoob freex_sqlalchemy_test.py -v

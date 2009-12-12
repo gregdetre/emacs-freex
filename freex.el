@@ -66,6 +66,7 @@ directory." )
     (define-key km "\C-cf" 'freex-meta-find)
     (define-key km "\C-ct" 'freex-meta-edit-tag-parents-in-minibuffer)
     (define-key km "\C-ca" 'freex-meta-edit-aliases-in-minibuffer)
+    (define-key km "\C-cn" 'freex-embed-define-region-as-nugget)
     km)
   "The keymap used in `freex-mode'."
   )

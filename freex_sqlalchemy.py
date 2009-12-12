@@ -324,7 +324,7 @@ class Fsqa(object):
             self.load_db()
 
         # create the mappers
-        self.create_mappers()
+        #self.create_mappers()
 
     
 

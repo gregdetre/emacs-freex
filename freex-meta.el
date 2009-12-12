@@ -1019,7 +1019,8 @@ highest overlay at point."
   (freex-meta-remove-parents-from-alias-chosen
    (freex-meta-get-query prompt require-match in-in)))
 
-
+(defun freex-meta-new-file-header (filename_noext)
+  (insert (concat "<sect level=\"1\">" filename_noext "</sect>\n\n")))
 
 (defun freex-meta-find ()
   "Queries the user for a nugget or wildcard list of
@@ -1052,7 +1053,8 @@ nuggets."
       (find-file filename)
       ;; add the nugget name as a level-1 heading at the top
       ;; of the new nugget
-      (insert (concat "<sect level=\"1\">" query "</sect>\n\n")))
+      (freex-meta-new-file-header query))
+      ;;(insert (concat "<sect level=\"1\">" query "</sect>\n\n")))
       ;; (error "No nuggets matching that query were found"))
 
       ;; try and open this single nugget

@@ -923,12 +923,7 @@ them.
 and a string delimiter, and inserts the delimiter in between
 every element. Doesn't do much error-checking, so make sure
 you send in a list of strings."
-  (let ((str (car lst)))
-    (setq lst (cdr lst))
-    (dolist (el lst)
-      (setq str (concat str delim el)))
-    str))
-
+  (mapconcat 'identity lst delim))
 
 ;; "lecture - blah- boosting" -> "lecture ; blah- boosting"
 (defun freex-meta-hyphens-to-semicolons-delim (str)

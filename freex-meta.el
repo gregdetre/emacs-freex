@@ -697,7 +697,7 @@ If fourth arg FIXEDCASE is non-nil, do not alter case of replacement text.
 If fifth arg LITERAL is non-nil, insert REPLACEMENT literally."
   (cond
    ((fboundp 'replace-in-string)
-    (replace-in-string text regexp replacement literal))
+    (replace-in-string text regexp replacement))
    ((fboundp 'replace-regexp-in-string)
     (replace-regexp-in-string regexp replacement text fixedcase literal))
    (t (let ((repl-len (length replacement))

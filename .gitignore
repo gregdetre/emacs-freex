@@ -1,5 +1,8 @@
 *.py[cod]
 
+# freex-specific
+testdocs
+
 # misc mac
 .DS_Store
 

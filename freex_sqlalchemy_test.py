@@ -2287,6 +2287,80 @@ class FsqaTests(BaseTests):
                          [])
 
 
+############################################################
+class RegexTests(BaseTests):
+
+    def setUp(self):
+        super(RegexTests, self).setUp()
+        self.aliases = ['abcd1',
+                        'abcd2',
+                        'efgh1',
+                        'efgh2',
+                        'efaa1',
+                        'ijkl',
+                        'ijkl mnop1',
+                        'mnop1',
+                        'capitalization1',
+                        'Capitalization2',
+                        'Sp Capitalization', # first word needs to be < maxlen to check escaping isn't messing things up
+                        'Alan, Brenda & Charlie (2003)',
+                        'xyz',
+                        '2006',
+                        '200 words a day',
+                        'me teaching',
+                        'typing',
+                        'conversation - Greg Detre - 131003',
+                        ]
+        for c in range(100):
+            self.aliases += ['common%i' % c]
+        for alias in self.aliases:
+            add_nugget(alias + '.freex', '')
+        self.contents_matchranges = [
+            ('efgh1 but not the second, and another efaa1', [[0, 5], [38, 43]]),
+            ('abcd1 at the beginning', [[0, 5]]),
+            ('at the end abcd2', [[11, 16]]),
+            ('conversation - Greg Detre - 131003', [[0, 34]]),
+            ('multiple abcd1 abcd1 and abcd1', [[9, 14], [15, 20], [25, 30]]),
+            ('with spaces ijkl mnop1', [[12, 22]]),
+            ('punctuation abcd1, abcd2. efgh1; efgh2: efaa1-ijkl mnop1', [[12, 17], [19, 24], [26, 31], [33, 38], [40, 45], [46, 56]]),
+            ('capitalization1 but not second', [[0, 15]]),
+            ('Capitalization2 but not first', [[0, 15]]),
+            ('neither Capitalization1 nor capitalization2', []),
+            ('cites Alan, Brenda & Charlie (2003)', [[6, 35],]),
+            ('2006 should', [[0, 4]]),
+            ('xyz ', [[0, 3]]),
+            ('me typing should not be blocked by me teaching', [[3, 9], [35, 46]]),
+            ('Sp Capitalization', [[0, 17]]),
+            ('Sp      Capitalization', [[0, 22]]),
+            ('Sp\nCapitalization', [[0, 17]]),
+            ('Sp\n  Capitalization', [[0, 19]]),
+            ('Sp \n  Capitalization', [[0, 20]]),
+            ('common long start 1', []), # because we're ignoring too-common would have been [[0, 7]]
+            ('common long start 99', []), # because we're ignoring too-common. would have been [[0, 9]]
+            ]
+        update_implicit_link_regexp_firstn()
+
+
+    def test_original_twostage(self):
+
+        for contents, desired in self.contents_matchranges:
+
+            actual = get_all_matching_implicit_links_twostage(contents)
+            try:
+                self.assertEqual(actual, desired)
+            except:
+                print 'contents:', contents
+                print 'desired:', desired
+                print 'actual:', actual
+                print
+                import pdb; pdb.set_trace()
+
+    def test_get_all_matching_implicit_links_wordset(self):
+        txt = 'abcd1. Sp   Capitalization, efgh'
+        actual = set(get_all_matching_implicit_links_wordset(txt, self.aliases))
+        desired = set(['abcd1', 'Sp Capitalization'])
+        self.assertEqual(actual, desired)
+        
 
 ############################################################
 # main

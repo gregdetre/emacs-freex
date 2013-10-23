@@ -512,7 +512,8 @@ in the minibuffer."
   (freex-sqlalchemy-put-aliases-delim
    id
    (read-string ;; (prompt initial-input)
-    "Aliases: " aliases))))
+    "Aliases: " aliases)))
+  (freex-fontify-update-implicit-link-regexp))
 
 
 (defun freex-meta-add-aliases-in-minibuffer ()
@@ -864,7 +865,14 @@ db. Create db entries for them.
           (dolist (hook freex-meta-add-nugget-hooks)
             (eval (list hook fbnd-no-ext)))
 
-        (message (format "Added %s to db" fbnd)))))))
+        (message (format "Added %s to db" fbnd))))))
+
+  (message "Finished checking files")
+  
+  (freex-sqlalchemy-update-implicit-link-regexp)
+  (message "Finished updating regex")
+  (message nil))
+
 
 
 (defun freex-meta-remove-parents-from-alias-chosen (chosen)

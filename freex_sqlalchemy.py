@@ -34,6 +34,7 @@
 
 
 import os, sys
+import collections
 import datetime, time
 import string, re
 import random
@@ -636,36 +637,37 @@ def get_fsqa():
 # I really don't like globals, but pymacs is kinda forcing us into
 # this
 impLinkRegexp = None
+# for the twostage implicit link matching
+impLinkRegexpFirstn = None
+
+# maps alias-truncated-to-n-characters to a list of
+# untruncated aliases that start like that, e.g.
+#   {abcde: [abcde1, abcde2, ...],}
+firstn_to_aliases = None
 
 
 
 ##############################################################
-def update_implicit_link_regexp():
+def update_implicit_link_regexp_original(aliases=None):
     """
     Builds and compiles the implicit link regular expression.
     """
-    # interactions[update_implicit_link_regexp] = ''
-
-    # if you want to test this whole regex business, see
-    # re_experim.py    
-
     # the global regexp
     global impLinkRegexp
 
     # only bother with the regexes if we're in emacs (i.e. use_lisp = True) 
     # AND emacs wants us to
     if fsqa.use_lisp and not lisp.freex_enable_implicit_links.value():
-
         # xxx - cheat and exit so it works without hyperlinks with
         # lame mac python 2.5 regex overflow bug
         impLinkRegexp = re.compile('', re.MULTILINE)
-        return
-    
-    # get and sort the aliases
-    aliases = get_all_aliases()
+        return impLinkRegexp
 
-    # we will lower all so that we ignore case
-    # aliases = [re.escape(a.lower()) for a in aliases]
+    if aliases is None:
+        # get and sort the aliases
+        aliases = get_all_aliases()
+
+    # add .lower() here and elsewhere if you want case-insensitive
     aliases = [re.escape(a) for a in aliases]
 
     # ensure that 'jubba wubba' comes before 'jubba'
@@ -702,47 +704,197 @@ def update_implicit_link_regexp():
     # impLinkRegexp = re.compile(aliasRegexpStr, re.IGNORECASE|re.MULTILINE)
     impLinkRegexp = re.compile(aliasRegexpStr, re.MULTILINE)
 
-
-
-##############################################################
-def update_implicit_link_regexp_temp():
-
-    """
-    Temp version of update_implicit_link_regexp that
-    returns aliasRegexpStr
-    """
-
-    global impLinkRegexp
-    aliases = get_all_aliases()
-    aliases.sort(reverse=True)
-    aliases = [re.escape(a.lower()) for a in aliases]
-    aliasRegexpStr = '\\b'+'\\b|\\b'.join(aliases)+'\\b'
-    aliasRegexpStr = aliasRegexpStr.replace('\\ ', ' ?\\\n? *')
-    aliasRegexpStr = aliasRegexpStr.replace('\\ ', ' ?\\\n? *')
-    impLinkRegexp = re.compile(aliasRegexpStr,re.IGNORECASE|re.MULTILINE)
-
-    return aliasRegexpStr
-
+    return aliasRegexpStr, impLinkRegexp
 
 
 ############################################################
-def get_all_matching_implicit_links(textToSearch):
+def update_implicit_link_regexp_firstn(maxlen=4):
+    """
+    Stage 1 of get_all_matching_implicit_links_twostage().
+
+    If you get an error because your regex is too big
+    (thousands of nuggets), then set MAXLEN lower.
+
+    Based on update_implicit_link_regexp_original()
+    """
+    global impLinkRegexpFirstn
+    global firstn_to_aliases
+
+    if fsqa.use_lisp and not lisp.freex_enable_implicit_links.value():
+        impLinkRegexpFirstn = re.compile('', re.MULTILINE)
+        return
+    
+    all_aliases = get_all_aliases()
+    # add lower() here and elsewhere if you want case-insensitive
+    # you need the strip(), otherwise e.g. '200 ' will come before '2006'
+    trunc_aliases = [a[:maxlen].split()[0].strip() for a in all_aliases]
+    # trunc_aliases = [a[:maxlen].strip() for a in all_aliases]
+    esc_aliases = [re.escape(a) for a in trunc_aliases]
+    uniq_aliases = list(set([a for a in esc_aliases]))
+    uniq_aliases.sort(reverse=True)
+    # some of the aliases might overlap, e.g. 'me t' might
+    # greedily consume/block aliases beginning with 't', so
+    # use lookaheads. see
+    # http://stackoverflow.com/questions/11430863/how-to-find-overlapping-matches-with-a-regexp
+    #
+    # REMOVED unfortunately, this makes the regex too long
+    # lookahead_aliases = ['(?=%s)' % a for a in uniq_aliases]
+    #
+    # N.B. doesn't require the trailing \\b at the end of
+    # each disjunct, because we're not expecting the
+    # truncated-n-alias to finish on a word boundary
+    aliasRegexpStr = '\\b'+'|\\b'.join(uniq_aliases)
+    aliasRegexpStr = aliasRegexpStr.replace('\\ ', ' ?\\\n? *')
+    aliasRegexpStr = aliasRegexpStr.replace( ')\\b', ')' )
+    impLinkRegexpFirstn = re.compile(aliasRegexpStr, re.MULTILINE)
+
+    # see definition of FIRSTN_TO_ALIASES. can't be done in
+    # a list/dict comprehension, because we need to keep
+    # appending to existing keys. xxx maybe something in itertools?
+    firstn_to_aliases = collections.defaultdict(list)
+    assert len(trunc_aliases) == len(all_aliases)
+    for trunc_a, all_a in zip(trunc_aliases, all_aliases):
+        # key on tuple split by whitespace, e.g. 'AB
+        # testing' -> ('AB','t'). this is so that short
+        # first words get a clue from later words
+        #
+        # REMOVED unfortunately, this creates issues where
+        # 'me t' can greedily consume any aliases beginning
+        # with 't'...
+        # firstn_to_aliases[tuple(trunc_a.split())] += [all_a]
+        # firstn_to_aliases[trunc_a.split()[0]] += [all_a]
+        firstn_to_aliases[trunc_a] += [all_a]
+
+    return aliasRegexpStr, impLinkRegexpFirstn
+
+
+############################################################
+def get_all_matching_implicit_links_original(textToSearch):
     """ Return a list of (beg,end) tuples for all the matching implicit
     links in the provided string.  """
-    # interactions[get_all_matching_implicit_links] = ''
-
     global impLinkRegexp
-
     # make sure it's filled
     if impLinkRegexp is None:
-	update_implicit_link_regexp()
+	update_implicit_link_regexp_original()
 
-    # get the start and endpoints for the matches
-    matches = [list(match.span()) for match in impLinkRegexp.finditer(textToSearch)]
+    # get the start and endpoints for the matchranges
+    matchranges = [list(match.span()) for match in impLinkRegexp.finditer(textToSearch)]
 
-    # return the matches
-    return matches
+    # return the matchranges
+    return matchranges
     
+
+
+############################################################
+def get_all_matching_implicit_links_twostage(textToSearch):
+    """
+    This breaks the implicit link finding into 2 stages:
+
+    1) Create a relatively short regex based on the set of
+    aliases-truncated-to-5-characters.
+
+    2) Run this on the buffer, and compile a custom regex
+    from the subset of aliases whose first 5 characters were
+    found.
+
+    The matches for this second regex are the implicit links.
+    """
+    # add .lower() here and elsewhere if you want case-insensitive
+    # textToSearch = textToSearch.lower()
+
+    global impLinkRegexpFirstn
+    if impLinkRegexpFirstn is None:
+	aliasRegexpStr, impLinkRegexpFirstn = update_implicit_link_regexp_firstn()
+
+    # find the matchranges based on the first N characters
+    matchranges_firstn = [list(match.span()) for match in impLinkRegexpFirstn.finditer(textToSearch)]
+
+    # extract the aliases-truncated-to-maxlen from the text,
+    # so we can burrow down to figure out exactly which of
+    # the untruncated aliases match
+    matched_aliases_firstn = [textToSearch[start:end] for start,end in matchranges_firstn]
+    # POTENTIAL_FULL_ALIASES = list of all the aliases that
+    # start with one of MATCHED_ALIASES_FIRSTN, so that we
+    # can compile a regex of them
+    potential_full_aliases = []
+    for a_trunc in matched_aliases_firstn:
+        # for this A_TRUNC alias-truncated-to-n-characters,
+        # these are the list of potential full aliases. see
+        # comment on keys for FIRSTN_TO_ALIASES re tuples
+        # split by whitespace
+        # current_potentials = firstn_to_aliases[tuple(a_trunc.split())]
+        current_potentials = firstn_to_aliases[a_trunc]
+        # current_potentials = firstn_to_aliases[a_trunc.split()[0]]
+        # ignore starting strings (e.g. 'conversation', 'journal') where
+        # there are too many potential matches to deal with (regex gets too big)
+        #
+        # if sum([len(a) for a in current_potentials]) < 5000:
+            # xxx - actually, it would be better to call
+            # UPDATE_IMPLICIT_LINK_REGEXP_FIRSTN recursively
+            # to get a new batch here
+            # potential_full_aliases += current_potentials
+        potential_full_aliases += current_potentials
+    potential_full_aliases = set(potential_full_aliases)
+
+    wordset_aliases = get_all_matching_implicit_links_wordset(textToSearch, potential_full_aliases)
+
+#     # xxx - ALL_ALIASES should just be a global, but construct it for now
+#     aliases = []
+#     for alias_set in firstn_to_aliases.values(): 
+#         aliases += alias_set
+#     aliases = set(aliases)
+    # wordset_aliases = get_all_matching_implicit_links_wordset(textToSearch, aliases)
+
+    if not wordset_aliases:
+        # nothing matched the first N characters, so no point running the regex
+        return []
+
+    # now set up a custom regex for just the POTENTIAL_FULL_ALIASES
+    # aliasRegexpStr, impLinkRegexp = update_implicit_link_regexp_original(aliases=potential_full_aliases)
+    aliasRegexpStr, impLinkRegexp = update_implicit_link_regexp_original(aliases=wordset_aliases)
+
+    matchranges = [list(match.span()) for match in impLinkRegexp.finditer(textToSearch)]
+
+    return matchranges
+
+
+############################################################
+def get_all_matching_implicit_links_wordset(txt, aliases):
+    """
+    TXT is the text you want to search through.
+
+    ALIASES is the list of potential (probably multi-word)
+    aliases that you think might be in TXT.
+
+    Designed to be run as a late-stage whittling for
+    multi-word aliases whose first few characters are
+    definitely in TXT.
+    
+    Returns FOUNDS, a subset of ALIASES. N.B. This is overly
+    permissive - you still need to run a regex afterwards
+    with the exact aliases to be certain they match, and to
+    find the start/end boundaries.
+    """
+    # re_words = re.compile('\b.*\b', re.MULTILINE)
+    # wordranges = [match.span() for match in re_words.finditer(txt)]
+    # wordset = set([txt[start:end] for start,end in wordranges])
+
+    def replace_punctuation_with_space(s):
+        ## see http://stackoverflow.com/questions/265960/best-way-to-strip-punctuation-from-a-string-in-python
+        # return s.translate(string.maketrans("",""), string.punctuation)
+        #
+        # Bleurgh. That only works for ascii. Updated for unicode: http://stackoverflow.com/questions/11692199/string-translate-with-unicode-data-in-python
+        remove_punctuation_map = dict((ord(char), ord(' ')) for char in string.punctuation)
+        return unicode(s).translate(remove_punctuation_map)
+
+    txt_nopunc = replace_punctuation_with_space(txt)
+    wordset = set(txt_nopunc.split())
+    founds = set()
+    for alias in aliases:
+        if all([(w in wordset)
+                for w in replace_punctuation_with_space(alias).split()]):
+            founds.add(alias)
+    return founds
 
 
 ############################################################
@@ -3692,3 +3844,12 @@ def uniquify_list(lst):
 
     set = {}
     return [set.setdefault(e,e) for e in lst if e not in set]
+
+
+
+# update_implicit_link_regexp = update_implicit_link_regexp_original
+# get_all_matching_implicit_links = get_all_matching_implicit_links_original
+
+update_implicit_link_regexp = update_implicit_link_regexp_firstn
+get_all_matching_implicit_links = get_all_matching_implicit_links_twostage
+

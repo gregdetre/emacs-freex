@@ -113,8 +113,13 @@
 	    (eval (list hook)))
 	  ;; start using freex custom save
 	  (add-hook 'write-contents-hooks 'freex-embed-save nil t)
-	  ;; add in the fontification
-	  (freex-fontify-update-implicit-link-regexp)
+
+	  ;; build the regex if this is the first time freex-mode has run
+          (if (boundp 'freex-mode-has-run-already)
+              nil ; do nothing
+              (progn
+                (setq freex-mode-has-run-already t)
+                (freex-fontify-update-implicit-link-regexp)))
       
 	  (if (eq major-mode 'muse-mode)
 	      ;; add our fontification hook to the muse-colors-region-hook

@@ -366,16 +366,7 @@ freex-meta-minibuffer-aliases."
 ;;                 (dynamic-completion-table
 ;;                  freex-sqlalchemy-edit-tag-parents-in-minibuffer-complete)))
 (defun freex-meta-edit-tag-parents-in-minibuffer-dct (string predicate mode)
-  (with-current-buffer
-      (let ((window (minibuffer-selected-window)))
-	(if (window-live-p window)
-	    (window-buffer window)
-	  (current-buffer)))
-    (cond ((eq mode t)
-	   (all-completions string (freex-sqlalchemy-edit-tag-parents-in-minibuffer-complete string) predicate))
-	  ((not mode)
-	   (try-completion string (freex-sqlalchemy-edit-tag-parents-in-minibuffer-complete string) predicate))
-	  (t (test-completion string (freex-sqlalchemy-edit-tag-parents-in-minibuffer-complete string) predicate)))))
+  (with-current-buffer (let ((window (minibuffer-selected-window))) (if (window-live-p window) (window-buffer window) (current-buffer))) (cond ((eq mode t) (all-completions string (freex-sqlalchemy-edit-tag-parents-in-minibuffer-complete string) predicate)) ((not mode) (try-completion string (freex-sqlalchemy-edit-tag-parents-in-minibuffer-complete string) predicate)) (t (test-completion string (freex-sqlalchemy-edit-tag-parents-in-minibuffer-complete string) predicate)))))
 
 
 

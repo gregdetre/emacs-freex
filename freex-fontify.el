@@ -251,11 +251,12 @@ active in the current buffer.")
 
 (defvar freex-fontify-link-local-map
   (let ((map (make-sparse-keymap)))
-    (define-key map [return] 'freex-follow-link-at-point)
-    (define-key map [(control ?m)] 'freex-follow-link-at-point)
-    (define-key map [(shift return)] 'freex-follow-link-at-point-other-window)
-    (define-key map [(shift control ?m)]
-        'freex-follow-link-at-point-other-window)
+    ;; (define-key map [(control ?m)] 'freex-follow-link-at-point)
+    ;; (define-key map [return] 'freex-follow-link-at-point)
+    ;; (define-key map [(shift return)] 'freex-follow-link-at-point-other-window)
+    (define-key map [(shift return)] 'freex-follow-link-at-point)
+    ;; (define-key map [(shift control ?m)] 'freex-follow-link-at-point-other-window)
+    (define-key map [(shift control ?m)] 'freex-follow-link-at-point)
     ;; i can't get the mouse-1 stuff to work
     ;; (define-key map [mouse-1] 'freex-follow-link-at-mouse)
     ;; (define-key map [(shift mouse-2)]

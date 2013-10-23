@@ -38,6 +38,7 @@ from freex_sqlalchemy import *
 
 import pdb
 import random
+import sqlalchemy
 
 
 ############################################################
@@ -2051,7 +2052,7 @@ class FsqaTests(BaseTests):
         # SQLError/IntegrityError. i don't know how to test
         # that it's specifically a uniqueness exception, so
         # i'm just going to assertRaises for that
-        self.assertRaises(exceptions.SQLError, add_nugget, 'nugid1.freex', 'new content')
+        self.assertRaises(sqlalchemy.exceptions.IntegrityError, add_nugget, 'nugid1.freex', 'new content')
 
 
 

@@ -29,7 +29,7 @@ Copyright 2007, Greg Detre, Per Sederberg.
 # if you want to run things interactively in ipython:
 #
 # from freex_sqlalchemy_test import *
-# fst = FsqaTest()
+# fst = FsqaTests()
 # fst.setUp()
 
 
@@ -39,13 +39,9 @@ from freex_sqlalchemy import *
 import pdb
 import random
 
-class FsqaTest(unittest.TestCase):
 
-    """
-    This is the set of test cases for testing freex_sqlalchemy.py
-    """
-
-########################################
+############################################################
+class BaseTests(unittest.TestCase):
     test_database_dir = '.'
     test_database_file = 'freex_test.db'
 
@@ -160,6 +156,12 @@ class FsqaTest(unittest.TestCase):
             self.fsqa.db.execute(ins)
 
 
+
+############################################################
+class FsqaTests(BaseTests):
+    """
+    This is the set of test cases for testing freex_sqlalchemy.py
+    """
 
 ########################################
     def test_populate(self):
@@ -2171,9 +2173,7 @@ class FsqaTest(unittest.TestCase):
 
 ########################################
     def test_intersect_lists(self):
-
         """Intersecting lists"""
-
         # all of them match
         a = [1,2,3,4,5]
         b = [1,2,3,4,5]

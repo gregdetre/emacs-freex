@@ -2260,7 +2260,7 @@ class FsqaTests(BaseTests):
         a = [1,2,None]
         b = [None,2,None]
         self.assertEquals(intersect_lists([a,b]),
-                         [None,2])
+                         [2,None])
 
         # its input must be a list
         self.assertRaises(ShouldBeList,intersect_lists,1)

@@ -354,7 +354,7 @@ freex-meta-minibuffer-aliases."
        nil ; predicate
        nil ; require match
        ;; apparently, initial input has been deprecated, but it's useful...
-       tag-parents ;; initial input
+       tag-parents ; initial input
        freex-meta-complete-alias-hist
        ))
    )))

@@ -323,8 +323,7 @@ editing in the minibuffer. See also:
 freex-meta-minibuffer-aliases."
   (interactive)
   (let* ((id (freex-embed-get-id-at-point))
-         (tag-parents nil)
-         (pcm partial-completion-mode))
+         (tag-parents nil))
 
     (unless id
       ;; this nugget doesn't exist. save it first so that it
@@ -334,8 +333,6 @@ freex-meta-minibuffer-aliases."
         (setq id (freex-embed-get-id-at-point))))
 
     (setq tag-parents (freex-sqlalchemy-get-tag-parents-delim-slash id))
-
-    (partial-completion-mode -1)
 
     ;; allows nuggets with spaces in. see complete-alias for
     ;; more info
@@ -978,18 +975,13 @@ highest overlay at point."
   "Returns a query like 'emacs//*' or 'loci1/journal -
 070906'. Doesn't actually run that query to see what it returns."
 
-  ;; store the current state of partial-completion-mode,
-  ;; because we're going to turn it off for the duration of
-  ;; this function
-  (let ((pcm partial-completion-mode)
+  (let (
         ;; we're shadowing the real
         ;; minibuffer-local-completion-map with this local
         ;; version. at the end of the let block, the real
         ;; one will take over again
         (mlcm minibuffer-local-completion-map)
         (query nil))
-    
-    (partial-completion-mode -1)
     
     ;; this is only going to affect the local version. it'll
     ;; stop SPC being bound to complete, so that we can type
@@ -1013,9 +1005,6 @@ highest overlay at point."
            in-in ;; initial-input
            freex-meta-complete-alias-hist))
     
-    ;; set the partial-completion-mode and the keymap back
-    ;; to whatever they were
-    (partial-completion-mode pcm)
     (setq minibuffer-local-completion-map mlcm)
     
     query))

@@ -144,15 +144,26 @@ active in the current buffer.")
 	       (not (get-text-property beg 'freex-link)))
       ;; is an alias, so set the link-file from the alias
       (setq link-file (freex-sqlalchemy-get-filename-a link-text))
-      ;; set the link-text properties
+      ;; set the link-text properties to interactive link
+      ;; for most of the range, except the last character,
+      ;; which we'll make a non-interactive link so that it
+      ;; looks like a link but isn't clickable, making it
+      ;; easier to add carriage returns at the end of a link
       (add-text-properties beg
-			   end
+			   (- end 1)
 			   (list 'face 'freex-link-face 
 				 'freex-link t 
 				 'keymap freex-fontify-link-local-map
-				 ;;'font-lock-multiline t
+                                 ;; doesn't seem to help
+				 ;; 'font-lock-multiline t
 				 'link-text link-text
-				 'link-file link-file)))))
+				 'link-file link-file))
+      (add-text-properties (- end 1)
+                           end
+			   (list 'face 'freex-link-face
+				 'freex-link t
+				 ;; 'font-lock-multiline t
+                                 )))))
 
 
 (defun freex-unhighlight-buffer ()

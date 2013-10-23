@@ -88,7 +88,7 @@
 
 
 ;; Otherwise implicit links will be turned off
-;;(setq freex-enable-implicit-links t)
+(setq freex-enable-implicit-links t)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -31,8 +31,7 @@
 ;;; Contributors:
 
 ;;; Code:
-(eval-when-compile
-  (require 'cl))
+
 
 ;; set the required files
 (require 'freex-embed)
@@ -675,12 +674,15 @@ to the items in NUGLIST."
 ;; utility functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun freex-meta-list-intersection (lst-a lst-b)
+(defun freex-meta-member-a-not-in-b (lst-a lst-b)
    "Return a list of the elements in lst-a that are not in
 lst-b."
-   (remove-if '(lambda (elt)
-		 (not (member elt lst-b)))
-	      lst-a))
+  (let ((a-not-in-b nil))
+    (dolist (el-a lst-a)
+      (when (not (member el-a lst-b))
+        (push el-a a-not-in-b)))
+    a-not-in-b))
+
 
 (defun freex-meta-remove-regexp-from-string (regexp str)
   "Removes all instances of the regexp from the string."
@@ -785,13 +787,13 @@ db. Create db entries for them.
       ;; find all the files that don't have db entries - step
       ;; #1
       (setq file-but-no-db
-            (freex-meta-list-intersection files db-filenames))
+            (freex-meta-member-a-not-in-b files db-filenames))
       
       ;; find all the db entries whose filenames don't exist
       ;; (because they've either been moved or renamed) - step
       ;; #2
       (setq db-but-no-file
-            (freex-meta-list-intersection db-filenames files))
+            (freex-meta-member-a-not-in-b db-filenames files))
       
       ;; ask the user how to deal with those db entries that
       ;; don't have files - step #3
@@ -938,7 +940,12 @@ them.
 and a string delimiter, and inserts the delimiter in between
 every element. Doesn't do much error-checking, so make sure
 you send in a list of strings."
-  (mapconcat 'identity lst delim))
+  (let ((str (car lst)))
+    (setq lst (cdr lst))
+    (dolist (el lst)
+      (setq str (concat str delim el)))
+    str))
+
 
 ;; "lecture - blah- boosting" -> "lecture ; blah- boosting"
 (defun freex-meta-hyphens-to-semicolons-delim (str)

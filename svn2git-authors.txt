@@ -1,0 +1,4 @@
+(no author) = Greg Detre <greg@gregdetre.co.uk>
+gdetre = Greg Detre <greg@gregdetre.co.uk>
+psederberg = Per Sederberg <psederberg@gmail.com>
+mailx5101 = Xavier Maillard <zedek@gnu.org>

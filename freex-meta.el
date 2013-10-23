@@ -327,9 +327,9 @@ freex-meta-minibuffer-aliases."
          (tag-parents nil)
          (pcm partial-completion-mode))
 
-    ;; this nugget doesn't exist. save it first so that it exists in
-    ;; the database before we try to add tags
     (unless id
+      ;; this nugget doesn't exist. save it first so that it
+      ;; exists in the database before we try to add tags
       (progn
         (save-buffer)
         (setq id (freex-embed-get-id-at-point))))

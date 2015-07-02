@@ -14,3 +14,5 @@ If you learn best by seeing, watch the [http://www.youtube.com/watch?v=vGqaSzD-F
 If you learn best by doing, then you might want to skip to the [Quickstart] or [Tutorial], and try working through things yourself.
 
 The Freex codebase has been pretty stable since about 2007, though we continue to make minor tweaks to improve the interface and make it easier to install. Moved from https://code.google.com/p/emacs-freex/ on 1st July 2015.
+
+Keywords: emacs personalwiki notes pymacs freex wiki database transclusion hypermedia tagging sqlite

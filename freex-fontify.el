@@ -103,10 +103,10 @@ active in the current buffer.")
   (interactive)
   (if (or freex-fontify-update-implicit-link-regexp-often
           (interactive-p))
-;;  (if (interactive-p)
       (progn
         (message "Updating implicit links regex")
-        (freex-sqlalchemy-update-implicit-link-regexp))))
+        (freex-sqlalchemy-update-implicit-link-regexp)
+        (message "Done"))))
 
 
 (defun freex-fontify-process-implicit-links (beg end)

@@ -63,10 +63,11 @@ import subprocess
 #
 # if you want to run the real database interactively:
 #
-# from freex_sqlalchemy import * ; fsqa = create_fsqa('/Users/greg/Documents/freex/freex.db',False,False)
+# $ cd Dropbox/elisp/freex/
+# >>> from freex_sqlalchemy import * ; fsqa = create_fsqa('/Users/greg/Dropbox/freex/freex.db',False,False)
 
 # if you want to test the regexes
-# from freex_sqlalchemy import * ; fsqa = create_fsqa('/Users/greg/Documents/freex/freex.db',False,False); update_implicit_link_regexp_temp()
+# from freex_sqlalchemy import * ; fsqa = create_fsqa('/Users/greg/Dropbox/freex/freex.db',False,False); update_implicit_link_regexp_temp()
 
 # for tags: src = child, dest = parent, ASSOC_TAG = 1
 

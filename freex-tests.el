@@ -57,7 +57,7 @@
 ;; testing
 (setq freex-content-storage "files")
 
-(load "/home/greg/elisp/freex/freex-mode.el")
+(load "/Users/greg/Dropbox/elisp/freex/freex-mode.el")
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

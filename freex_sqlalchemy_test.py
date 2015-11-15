@@ -2369,7 +2369,7 @@ class RegexTests(BaseTests):
 
 if __name__ == "__main__":
 
-    forbidden_dirs = ['/home/greg/docs/freex']
+    forbidden_dirs = ['/home/greg/Dropbox/freex']
     
     # this is an unnecessary precaution, but just in
     # case. i've been pretty careful to make sure it creates

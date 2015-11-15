@@ -611,7 +611,7 @@ def create_fsqa_test():
     # from freex_sqlalchemy_test import *
     import freex_sqlalchemy_test
     
-    fsqa_test = freex_sqlalchemy_test.FsqaTest()
+    fsqa_test = freex_sqlalchemy_test.FsqaTests()
     fsqa_test.setUp()
     fsqa_test.populate()
 

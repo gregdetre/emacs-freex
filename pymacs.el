@@ -1,21 +1,40 @@
-;;; Interface between Emacs Lisp and Python - Lisp part.    -*- emacs-lisp -*-
-;;; Copyright © 2001, 2002, 2003 Progiciels Bourbeau-Pinard inc.
-;;; François Pinard <pinard@iro.umontreal.ca>, 2001.
+;;; pymacs.el --- Interface between Emacs Lisp and Python
 
-;;; This program is free software; you can redistribute it and/or modify
-;;; it under the terms of the GNU General Public License as published by
-;;; the Free Software Foundation; either version 2, or (at your option)
-;;; any later version.
-;;;
-;;; This program is distributed in the hope that it will be useful,
-;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;; GNU General Public License for more details.
-;;;
-;;; You should have received a copy of the GNU General Public License
-;;; along with this program; if not, write to the Free Software Foundation,
-;;; Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.  */
+;; Copyright © 2001-2003, 2012, 2013 Progiciels Bourbeau-Pinard inc.
 
+;; Author: François Pinard <pinard@iro.umontreal.ca>
+;; Maintainer: François Pinard <pinard@iro.umontreal.ca>
+;; URL: https://github.com/pinard/Pymacs
+;; Version: 0.25
+;; Keywords: Python interface protocol
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software Foundation,
+;; Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+;;; Commentary:
+
+;; Pymacs is a powerful tool which, once started from Emacs, allows
+;; both-way communication between Emacs Lisp and Python.  Pymacs aims
+;; Python as an extension language for Emacs rather than the other way
+;; around.  Visit http://pymacs.progiciels-bpi.ca to read its manual,
+;; which also contains installation instructions.
+
+;;; Code:
+
+;; The code is organized into pages, grouping declarations by topic.
+;; Such pages are introduced by a form feed and a topic description.
+
 ;;; Portability stunts.
 
 (defvar pymacs-use-hash-tables
@@ -24,15 +43,63 @@
 
 (eval-and-compile
 
-  (if (fboundp 'multibyte-string-p)
-      (defalias 'pymacs-multibyte-string-p 'multibyte-string-p)
-    (defun pymacs-multibyte-string-p (string)
-      "Tell XEmacs if STRING should be handled as multibyte."
-      (not (equal (find-charset-string string) '(ascii))))))
+  ;; pymacs-called-interactively-p
+  (defalias 'pymacs-called-interactively-p
+    (cond ((fboundp 'called-interactively-p) 'called-interactively-p)
+          ;; Emacs before 22.
+          (t 'interactive-p)))
 
-(defalias 'pymacs-report-error (symbol-function 'error))
+  ;; pymacs-cancel-timer
+  (defalias 'pymacs-cancel-timer
+    (cond ((fboundp 'cancel-timer) 'cancel-timer)
+          ;; XEmacs case - yet having post-gc-hook, this is unused.
+          ((fboundp 'delete-itimer) 'delete-itimer)
+          (t 'ignore)))
+
+  ;; pymacs-kill-without-query
+  (if (fboundp 'set-process-query-on-exit-flag)
+      (defun pymacs-kill-without-query (process)
+        "Tell recent Emacs how to quickly destroy PROCESS while exiting."
+        (set-process-query-on-exit-flag process nil))
+    (defalias 'pymacs-kill-without-query
+      (if (fboundp 'process-kill-without-query-process)
+          'process-kill-without-query-process
+        'ignore)))
+
+  ;; pymacs-multibyte-string-p
+  (cond ((fboundp 'multibyte-string-p)
+         (defalias 'pymacs-multibyte-string-p 'multibyte-string-p))
+        ((fboundp 'find-charset-string)
+         (defun pymacs-multibyte-string-p (string)
+           "Tell XEmacs if STRING should be handled as multibyte."
+           (not (member (find-charset-string string) '(nil (ascii))))))
+        (t
+         ;; Tell XEmacs that STRING is unibyte, when Mule is not around!
+         (defalias 'pymacs-multibyte-string-p 'ignore)))
+
+  ;; pymacs-report-error
+  (defalias 'pymacs-report-error (symbol-function 'error))
+
+  ;; pymacs-set-buffer-multibyte
+  (if (fboundp 'set-buffer-multibyte)
+      (defalias 'pymacs-set-buffer-multibyte 'set-buffer-multibyte)
+    (defun pymacs-set-buffer-multibyte (flag)
+      "For use in Emacs 20.2 or earlier.  Under XEmacs: no operation."
+      (setq enable-multibyte-characters flag)))
+
+  ;; pymacs-timerp
+  (defalias 'pymacs-timerp
+    (cond ((fboundp 'timerp) 'timerp)
+          ;; XEmacs case - yet having post-gc-hook, this is unused.
+          ((fboundp 'itimerp) 'itimerp)
+          (t 'ignore)))
+
+  )
 
 ;;; Published variables and functions.
+
+(defvar pymacs-python-command "python"
+  "Shell command used to start Python interpreter.")
 
 (defvar pymacs-load-path nil
   "List of additional directories to search for Python modules.
@@ -69,10 +136,22 @@ The status of the Pymacs helper is checked at every such timeout.")
   "Expected maximum time, in seconds, to get another line of a reply.
 The status of the Pymacs helper is checked at every such timeout.")
 
+(defvar pymacs-auto-restart 'ask
+  "Should the Pymacs helper be restarted whenever it dies?
+Possible values are nil, t or ask.")
+
 (defvar pymacs-dreadful-zombies nil
   "If zombies should trigger hard errors, whenever they get called.
 If `nil', calling a zombie will merely produce a diagnostic message.")
 
+(defvar pymacs-load-history nil "Pymacs loading history.")
+
+(defvar pymacs-after-load-functions nil
+  "Special hook run after loading a Python module.
+Each function there is called with a single argument, the Python
+module name passed to as the first argument of `pymacs-load'.")
+
+;;;###autoload
 (defun pymacs-load (module &optional prefix noerror)
   "Import the Python module named MODULE into Emacs.
 Each function in the Python module is made available as an Emacs function.
@@ -87,30 +166,64 @@ If NOERROR is not nil, do not raise error when the module is not found."
                                nil nil default)))
      (list module prefix)))
   (message "Pymacs loading %s..." module)
-  (let ((lisp-code (pymacs-call "pymacs_load_helper" module prefix)))
+  (let ((lisp-code (pymacs-call "pymacs_load_helper" module prefix noerror)))
     (cond (lisp-code (let ((result (eval lisp-code)))
+                       (add-to-list 'pymacs-load-history
+                                    (list module prefix noerror)
+                                    ;; append so that order is kept
+                                    'append)
                        (message "Pymacs loading %s...done" module)
+                       (run-hook-with-args 'pymacs-after-load-functions module)
                        result))
-          (noerror (message "Pymacs loading %s...failed" module) nil)
-          (t (pymacs-report-error "Pymacs loading %s...failed" module)))))
+          (noerror (message "Pymacs loading %s...failed" module) nil))))
 
+;;;###autoload
+(defun pymacs-autoload (function module &optional prefix docstring interactive)
+  "Pymacs's equivalent of the standard emacs facility `autoload'.
+Define FUNCTION to autoload from Python MODULE using PREFIX.
+If PREFIX is not given, it defaults to MODULE followed by a dash.
+Optional DOCSTRING documents FUNCTION until it gets loaded.
+INTERACTIVE is normally the argument to the function `interactive',
+t means `interactive' without arguments, nil means not interactive,
+which is the default."
+  (unless (symbolp function)
+    (error "`%s' should be a symbol" function))
+  (unless (stringp module)
+    (error "`%s' should be a string" module))
+  (unless (pymacs-python-reference function)
+
+    (defalias function
+      `(lambda (&rest args)
+         ,(or docstring
+              (format "Function `%s' to be loaded from Python module `%s'"
+                      function module))
+         ,(cond ((eq interactive t) '(interactive))
+                (interactive `(interactive ,interactive)))
+         (pymacs-load ,module ,prefix)
+         (unless (pymacs-python-reference ',function)
+           (error "Pymacs autoload failed to define function %s" ',function))
+         (apply ',function args)))))
+
+;;;###autoload
 (defun pymacs-eval (text)
   "Compile TEXT as a Python expression, and return its value."
-  (interactive "sPython expression? ")
+  (interactive "sPython expression: ")
   (let ((value (pymacs-serve-until-reply "eval" `(princ ,text))))
-    (when (interactive-p)
+    (when (pymacs-called-interactively-p)
       (message "%S" value))
     value))
 
+;;;###autoload
 (defun pymacs-exec (text)
   "Compile and execute TEXT as a sequence of Python statements.
 This functionality is experimental, and does not appear to be useful."
-  (interactive "sPython statements? ")
+  (interactive "sPython statements: ")
   (let ((value (pymacs-serve-until-reply "exec" `(princ ,text))))
-    (when (interactive-p)
+    (when (pymacs-called-interactively-p)
       (message "%S" value))
     value))
 
+;;;###autoload
 (defun pymacs-call (function &rest arguments)
   "Return the result of calling a Python function FUNCTION over ARGUMENTS.
 FUNCTION is a string denoting the Python function, ARGUMENTS are separate
@@ -119,6 +232,7 @@ to Python equivalents, other structures are converted into Lisp handles."
   (pymacs-serve-until-reply
    "eval" `(pymacs-print-for-apply ',function ',arguments)))
 
+;;;###autoload
 (defun pymacs-apply (function arguments)
   "Return the result of calling a Python function FUNCTION over ARGUMENTS.
 FUNCTION is a string denoting the Python function, ARGUMENTS is a list of
@@ -129,21 +243,32 @@ equivalents, other structures are converted into Lisp handles."
 
 ;;; Integration details.
 
-;; Python functions and modules should ideally look like Lisp functions and
-;; modules.  This page tries to increase the integration seamlessness.
+;; This page tries to increase the integration seamlessness of Pymacs
+;; with the reminder of Emacs.
 
-(defadvice documentation (around pymacs-ad-documentation activate)
-  ;; Integration of doc-strings.
-  (let* ((reference (pymacs-python-reference function))
-         (python-doc (when reference
-                       (pymacs-eval (format "doc_string(%s)" reference)))))
-    (if (or reference python-doc)
-        (setq ad-return-value
-              (concat
-               "It interfaces to a Python function.\n\n"
-               (when python-doc
-                 (if raw python-doc (substitute-command-keys python-doc)))))
-      ad-do-it)))
+;; Module "desktop" savagely kills `*Pymacs*' in some circumstances.
+;; Let's avoid such damage.
+
+(eval-after-load 'desktop
+  '(push "\\*Pymacs\\*" desktop-clear-preserve-buffers))
+
+;; Python functions and modules should ideally look like Lisp
+;; functions and modules.
+
+(when t
+
+  (defadvice documentation (around pymacs-ad-documentation activate)
+    ;; Integration of doc-strings.
+    (let* ((reference (pymacs-python-reference function))
+           (python-doc (when reference
+                         (pymacs-eval (format "doc_string(%s)" reference)))))
+      (if (or reference python-doc)
+          (setq ad-return-value
+                (concat
+                 "It interfaces to a Python function.\n\n"
+                 (when python-doc
+                   (if raw python-doc (substitute-command-keys python-doc)))))
+        ad-do-it))))
 
 (defun pymacs-python-reference (object)
   ;; Return the text reference of a Python object if possible, else nil.
@@ -217,7 +342,7 @@ equivalents, other structures are converted into Lisp handles."
         (inhibit-file-name-operation operation))
     (apply operation arguments)))
 
-;(add-to-list 'file-name-handler-alist '("\\.el\\'" . pymacs-file-handler))
+;;(add-to-list 'file-name-handler-alist '("\\.el\\'" . pymacs-file-handler))
 
 ;;; Gargabe collection of Python IDs.
 
@@ -230,27 +355,31 @@ equivalents, other structures are converted into Lisp handles."
 (defvar pymacs-used-ids nil
   "List of received IDs, currently allocated on the Python side.")
 
+;; This is set whenever the Pymacs helper successfully starts, and is
+;; also used to later detect the death of a previous helper.  If
+;; pymacs-use-hash-tables is unset, this variable receives `t' when
+;; the helper starts, so the detection works nevertheless.
 (defvar pymacs-weak-hash nil
   "Weak hash table, meant to find out which IDs are still needed.")
 
 (defvar pymacs-gc-wanted nil
-  "Flag if it is time to clean up unused IDs on the Python side.")
+  "Flag that it is desirable to clean up unused IDs on the Python side.")
 
-(defvar pymacs-gc-running nil
-  "Flag telling that a Pymacs garbage collection is in progress.")
+(defvar pymacs-gc-inhibit nil
+  "Flag that a new Pymacs garbage collection should just not run now.")
 
 (defvar pymacs-gc-timer nil
   "Timer to trigger Pymacs garbage collection at regular time intervals.
 The timer is used only if `post-gc-hook' is not available.")
 
 (defun pymacs-schedule-gc (&optional xemacs-list)
-  (unless pymacs-gc-running
+  (unless pymacs-gc-inhibit
     (setq pymacs-gc-wanted t)))
 
 (defun pymacs-garbage-collect ()
   ;; Clean up unused IDs on the Python side.
-  (when pymacs-use-hash-tables
-    (let ((pymacs-gc-running t)
+  (when (and pymacs-use-hash-tables (not pymacs-gc-inhibit))
+    (let ((pymacs-gc-inhibit t)
           (pymacs-forget-mutability t)
           (ids pymacs-used-ids)
           used-ids unused-ids)
@@ -263,7 +392,8 @@ The timer is used only if `post-gc-hook' is not available.")
       (setq pymacs-used-ids used-ids
             pymacs-gc-wanted nil)
       (when unused-ids
-        (pymacs-apply "free_python" unused-ids)))))
+        (let ((pymacs-forget-mutability t))
+          (pymacs-call "free_python" unused-ids))))))
 
 (defun pymacs-defuns (arguments)
   ;; Take one argument, a list holding a number of items divisible by 3.  The
@@ -389,11 +519,12 @@ The timer is used only if `post-gc-hook' is not available.")
                               (encode-coding-string expression 'utf-8)
                             (copy-sequence expression))))
                (set-text-properties 0 (length text) nil text)
-               (princ (mapconcat 'identity
+               (when multibyte
+                 (princ "b"))
+               (princ (mapconcat #'identity
                                  (split-string (prin1-to-string text) "\n")
                                  "\\n"))
-               (when (and multibyte
-                          (not (equal (find-charset-string text) '(ascii))))
+               (when multibyte
                  (princ ".decode('UTF-8')")))
              (setq done t)))
           ((symbolp expression)
@@ -472,8 +603,13 @@ The timer is used only if `post-gc-hook' is not available.")
   ;; This function gets called automatically, as needed.
   (let ((buffer (get-buffer-create "*Pymacs*")))
     (with-current-buffer buffer
+      ;; Erase the buffer in case some previous incarnation of the
+      ;; Pymacs helper died.  Otherwise, the "(goto-char (point-min))"
+      ;; below might not find the proper synchronising reply and later
+      ;; trigger a spurious "Protocol error" diagnostic.
+      (erase-buffer)
       (buffer-disable-undo)
-      (set-buffer-multibyte nil)
+      (pymacs-set-buffer-multibyte nil)
       (set-buffer-file-coding-system 'raw-text)
       (save-match-data
         ;; Launch the Pymacs helper.
@@ -481,16 +617,15 @@ The timer is used only if `post-gc-hook' is not available.")
                (apply 'start-process "pymacs" buffer
                       (let ((python (getenv "PYMACS_PYTHON")))
                         (if (or (null python) (equal python ""))
-                            "python"
+                            pymacs-python-command
                           python))
                       "-c" (concat "import sys;"
-                                   " from Pymacs.pymacs import main;"
+                                   " from Pymacs import main;"
                                    " main(*sys.argv[1:])")
-                      (mapcar 'expand-file-name pymacs-load-path))))
-          (cond ((fboundp 'set-process-query-on-exit-flag)
-                 (set-process-query-on-exit-flag process nil))
-                ((fboundp 'process-kill-without-query-process)
-                 (process-kill-without-query process)))
+                      (append
+                       (and (>= emacs-major-version 24) '("-f"))
+                       (mapcar 'expand-file-name pymacs-load-path)))))
+          (pymacs-kill-without-query process)
           ;; Receive the synchronising reply.
           (while (progn
                    (goto-char (point-min))
@@ -498,7 +633,7 @@ The timer is used only if `post-gc-hook' is not available.")
             (unless (accept-process-output process pymacs-timeout-at-start)
               (pymacs-report-error
                "Pymacs helper did not start within %d seconds"
-                     pymacs-timeout-at-start)))
+               pymacs-timeout-at-start)))
           (let ((marker (process-mark process))
                 (limit-position (+ (match-end 0)
                                    (string-to-number (match-string 1)))))
@@ -512,26 +647,39 @@ The timer is used only if `post-gc-hook' is not available.")
           (if (and (pymacs-proper-list-p reply)
                    (= (length reply) 2)
                    (eq (car reply) 'version))
-              (unless (string-equal (cadr reply) "0.23")
+              (unless (string-equal (cadr reply) "0.25")
                 (pymacs-report-error
-                 "Pymacs Lisp version is 0.23, Python is %s"
+                 "Pymacs Lisp version is 0.25, Python is %s"
                  (cadr reply)))
             (pymacs-report-error "Pymacs got an invalid initial reply")))))
-    (when pymacs-use-hash-tables
-      (if pymacs-weak-hash
-          ;; A previous Pymacs session occurred in *this* Emacs session.  Some
-          ;; IDs may hang around, which do not correspond to anything on the
-          ;; Python side.  Python should not recycle such IDs for new objects.
-          (when pymacs-used-ids
-            (let ((pymacs-transit-buffer buffer)
-                  (pymacs-forget-mutability t))
-              (pymacs-apply "zombie_python" pymacs-used-ids)))
-        (setq pymacs-weak-hash (make-hash-table :weakness 'value)))
+    (if (not pymacs-use-hash-tables)
+        (setq pymacs-weak-hash t)
+      (when pymacs-used-ids
+        ;; A previous Pymacs session occurred in this Emacs session,
+        ;; some IDs hang around which do not correspond to anything on
+        ;; the Python side.  Python should not recycle such IDs for
+        ;; new objects.
+        (let ((pymacs-transit-buffer buffer)
+              (pymacs-forget-mutability t)
+              (pymacs-gc-inhibit t))
+          (pymacs-call "zombie_python" pymacs-used-ids))
+        (setq pymacs-used-ids nil))
+      (setq pymacs-weak-hash (make-hash-table :weakness 'value))
       (if (boundp 'post-gc-hook)
           (add-hook 'post-gc-hook 'pymacs-schedule-gc)
         (setq pymacs-gc-timer (run-at-time 20 20 'pymacs-schedule-gc))))
     ;; If nothing failed, only then declare that Pymacs has started!
-    (setq pymacs-transit-buffer buffer)))
+    (setq pymacs-transit-buffer buffer)
+    (let ((modules pymacs-load-history))
+      (setq pymacs-load-history nil)
+      (when (and modules (yes-or-no-p "Reload modules in previous session? "))
+        (mapc (lambda (args)
+                ;; Be defensive in case sys.path differs
+                (condition-case err
+                    (apply 'pymacs-load args)
+                  (error
+                   (message "%s: %s" (car err) (error-message-string err)))))
+              modules)))))
 
 (defun pymacs-terminate-services ()
   ;; This function is mainly provided for documentation purposes.
@@ -543,11 +691,11 @@ The timer is used only if `post-gc-hook' is not available.")
 Killing the Pymacs helper might create zombie objects.  Kill? "))
     (cond ((boundp 'post-gc-hook)
            (remove-hook 'post-gc-hook 'pymacs-schedule-gc))
-          ((timerp pymacs-gc-timer)
-           (cancel-timer pymacs-gc-timer)))
-    (when pymacs-transit-buffer
+          ((pymacs-timerp pymacs-gc-timer)
+           (pymacs-cancel-timer pymacs-gc-timer)))
+    (when (buffer-live-p pymacs-transit-buffer)
       (kill-buffer pymacs-transit-buffer))
-    (setq pymacs-gc-running nil
+    (setq pymacs-gc-inhibit nil
           pymacs-gc-timer nil
           pymacs-transit-buffer nil
           pymacs-lisp nil
@@ -562,6 +710,11 @@ Killing the Pymacs helper might create zombie objects.  Kill? "))
   (unless (and pymacs-transit-buffer
                (buffer-name pymacs-transit-buffer)
                (get-buffer-process pymacs-transit-buffer))
+    (when pymacs-weak-hash
+      (unless (or (eq pymacs-auto-restart t)
+                  (and (eq pymacs-auto-restart 'ask)
+                       (yes-or-no-p "The Pymacs helper died.  Restart it? ")))
+        (pymacs-report-error "There is no Pymacs helper!")))
     (pymacs-start-services))
   (when pymacs-gc-wanted
     (pymacs-garbage-collect))
@@ -686,3 +839,4 @@ Killing the Pymacs helper might create zombie objects.  Kill? "))
         ((consp expression) (not (cdr (last expression))))))
 
 (provide 'pymacs)
+;;; pymacs.el ends here

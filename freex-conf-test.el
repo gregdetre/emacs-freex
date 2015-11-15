@@ -87,10 +87,6 @@
           'freex-meta-parse-alias-into-tag-parents)
 
 
-;; Otherwise implicit links will be turned off
-(setq freex-enable-implicit-links t)
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; optional keyboard shortcuts that could interfere with
 ;; other emacs modes ; xxx
@@ -100,8 +96,6 @@
 (global-set-key [(alt l)] 'freex-meta-find)
 (global-set-key [(hyper l)] 'freex-meta-find)
 
-;; Otherwise implicit links will be turned off
-(setq freex-enable-implicit-links t)
 
 (define-key freex-mode-map [(control =)] 'freex-embed-all-tag-children)
 

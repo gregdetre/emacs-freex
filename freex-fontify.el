@@ -83,12 +83,6 @@ Functions should not modify the contents of the buffer."
 new nuggets get added etc. Set this to 0 to update them less
 often, because they take a while if you have lots of nuggets.")
 
-(defvar freex-enable-implicit-links 
-  t
-  "By default update and enable the implicit links.  If have a
-  massive database, you may get an overflow error in Python 2.5
-  on a Mac, so you might have to turn this to nil")
-
 
 (defun freex-fontify-region (beg end &optional verbose)
   ;; remove everything in region, so we can put it back

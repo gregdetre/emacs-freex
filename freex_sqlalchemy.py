@@ -1040,17 +1040,17 @@ def get_tag_parents_delim(child_nugid):
 
 
 ############################################################
-def get_tag_parents_delim_slash(child_nugid):
+def get_tag_parents_delim_slash(child_nugid, delim='/'):
     # interactions[get_tag_parents_delim] = ''
 
     parent_aliases = get_tag_parents_for_a( \
         get_alias_from_nugid(child_nugid) )
 
-    parent_aliases_slash = string.join(parent_aliases,'/')
+    parent_aliases_slash = string.join(parent_aliases,delim)
     # if there are already some entries, then put a slash on
     # the end to make it easy for users to add new tags
     if len(parent_aliases_slash):
-       parent_aliases_slash += '/'
+       parent_aliases_slash += delim
     return parent_aliases_slash
 
 

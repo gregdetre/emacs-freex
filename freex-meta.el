@@ -1089,7 +1089,7 @@ nuggets."
     (setq prompt "New nugget: "))
 
   (let ((chosen
-         (freex-meta-complete-alias prompt require-match in-in)))
+         (freex-meta-complete-alias prompt require-match (concat in-in " - "))))
 
     (when (freex-sqlalchemy-exist-nugget-a chosen)
       (error "A nugget of that name already exists"))

@@ -37,3 +37,9 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# IDEA/Pycharm
+.idea
+
+releases/
+obsolete/

@@ -322,17 +322,13 @@ it will remove all meta-overlays in the buffer."
 editing in the minibuffer. See also:
 freex-meta-minibuffer-aliases."
   (interactive)
-  (let* ((id (freex-embed-get-id-at-point))
-         (tag-parents nil))
-
-    (unless id
-      ;; this nugget doesn't exist. save it first so that it
-      ;; exists in the database before we try to add tags
-      (progn
-        (save-buffer)
-        (setq id (freex-embed-get-id-at-point))))
-
-    (setq tag-parents (freex-sqlalchemy-get-tag-parents-delim-slash id))
+  (let* ((id (or (freex-embed-get-id-at-point)
+                 ;; this nugget doesn't exist. save it first so that it
+                 ;; exists in the database before we try to add tags
+                 (progn
+                   (save-buffer)
+                   (setq id (freex-embed-get-id-at-point)))))
+         (tag-parents (freex-sqlalchemy-get-tag-parents-delim-slash id)))
 
     ;; allows nuggets with spaces in. see complete-alias for
     ;; more info

@@ -2210,7 +2210,7 @@ def exist_nugget_a(alias):
     if isinstance(alias,unicode): alias = str(alias)
 
     if not isinstance(alias,str):
-        lisp.message(str(alias.__class__))
+        if fsqa.use_lisp: lisp.message(str(alias.__class__))
         raise ShouldBeStr
 
     if len(alias)==0:

@@ -111,7 +111,9 @@ directory." )
 (defun freex-follow-link-at-point (&optional other-window)
   "Visit the link at point."
   (interactive "P")
-  ;; see if we are on a link
+  ;; see if we are on a link. don't count the last character
+  ;; of a link as being a link, otherwise it's too hard to
+  ;; add carriage returns
   (if (get-text-property (point) 'freex-link)
       (let ((link-file (get-text-property (point) 'link-file))
 	    (link-url (get-text-property (point) 'link-url)))

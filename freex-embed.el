@@ -895,7 +895,11 @@ function."
                 (file-name-nondirectory (buffer-file-name)))))))
        
      ;; update the implicit link regexp
-     (freex-fontify-update-implicit-link-regexp)
+     ;;
+     ;; 131002 REMOVED - it leads to too many calls to update the regex.
+     ;; though without it, editing aliases in the minibuffer doesn't trigger a regex update... :(
+     ;;
+     ;; (freex-fontify-update-implicit-link-regexp)
 
      (dolist (hook freex-embed-save-hook)
        (eval (list hook)))

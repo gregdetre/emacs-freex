@@ -61,24 +61,24 @@ class BaseTests(unittest.TestCase):
 
     # each desired nugget consists of int(NUGID) and
     # str(FILENAME) (including .freex)
-    fake_nuggets = ( (1, 'nugid1.freex', 'this is the first nug'),
-                     (2, 'nugid2.freex', 'this is the second nug'),
-                     (3, 'nugid3.freex', 'this is the third nug'),
-                     (4, 'nugid4.freex', 'this is the fourth nug'),
-                     (5, 'nugid5.freex', 'this is the fifth nug'),
+    fake_nuggets = ( (1, u'nugid1.freex', 'this is the first nug'),
+                     (2, u'nugid2.freex', 'this is the second nug'),
+                     (3, u'nugid3.freex', 'this is the third nug'),
+                     (4, u'nugid4.freex', 'this is the fourth nug'),
+                     (5, u'nugid5.freex', 'this is the fifth nug'),
                      )
 
     # each fake alias consists of int(NUGID) (which must
     # already exist) and str(ALIAS) (without .freex
     # extension)
-    fake_aliases = ( (1, 'nugid1a'),
-                     (1, 'nugid1b'),
-                     (1, 'nugid1c'),
-                     (2, 'nugid2a'),
-                     (2, 'nugid2b'),
-                     (3, 'nugid3a'),
-                     (4, 'nugid4a'),
-                     (5, 'nugid5a'),
+    fake_aliases = ( (1, u'nugid1a'),
+                     (1, u'nugid1b'),
+                     (1, u'nugid1c'),
+                     (2, u'nugid2a'),
+                     (2, u'nugid2b'),
+                     (3, u'nugid3a'),
+                     (4, u'nugid4a'),
+                     (5, u'nugid5a'),
                      )
 
     fake_nugget_assocs = ( # src_nugid, dest_nugid, assoc_type_id
@@ -232,7 +232,7 @@ class FsqaTests(BaseTests):
 
         # if child and parent nugids are the same, it'll
         # fail and return None
-        self.assertEquals(None,add_tag_child_to_tag_parent_a(1,'nugid1b'))
+        self.assertEquals(None,add_tag_child_to_tag_parent_a(1, u'nugid1b'))
 
         # aberrant inputs
         #
@@ -243,8 +243,8 @@ class FsqaTests(BaseTests):
         # xxx but because this function is lazy and just
         # calls get_alias_from_nugid, you actually get an
         # exception sometimes
-        self.assertRaises(ShouldBeInt,add_tag_child_to_tag_parent_a,None,'nugid4')
-        self.assertRaises(ShouldBeInt,add_tag_child_to_tag_parent_a,'','nugid4')
+        self.assertRaises(ShouldBeInt,add_tag_child_to_tag_parent_a, None, u'nugid4')
+        self.assertRaises(ShouldBeInt,add_tag_child_to_tag_parent_a, u'', u'nugid4')
                           
 
 
@@ -297,16 +297,16 @@ class FsqaTests(BaseTests):
 
         # if child and parent nugids are the same, it'll
         # fail and return None
-        self.assertEquals(None,add_tag_child_a_to_tag_parent_a('nugid1a','nugid1b'))
+        self.assertEquals(None,add_tag_child_a_to_tag_parent_a(u'nugid1a', u'nugid1b'))
 
         # aberrant inputs
         #
         # if you feed it None, it should just quietly fail and return None
-        self.assertEquals(None,add_tag_child_a_to_tag_parent_a(None,'nugid4'))
-        self.assertEquals(None,add_tag_child_a_to_tag_parent_a('nugid4',None))
+        self.assertEquals(None,add_tag_child_a_to_tag_parent_a(None, u'nugid4'))
+        self.assertEquals(None,add_tag_child_a_to_tag_parent_a(u'nugid4', None))
         # if you feed it '', it should just quiety fail and return None
-        self.assertEquals(None,add_tag_child_a_to_tag_parent_a('','nugid4'))
-        self.assertEquals(None,add_tag_child_a_to_tag_parent_a('nugid4',''))
+        self.assertEquals(None,add_tag_child_a_to_tag_parent_a(u'', 'nugid4'))
+        self.assertEquals(None,add_tag_child_a_to_tag_parent_a(u'nugid4', ''))
 
 
 
@@ -317,40 +317,40 @@ class FsqaTests(BaseTests):
 
         self.populate()
 
-        if not 'nugid1.freex' in get_all_filenames():
+        if not u'nugid1.freex' in get_all_filenames():
             raise 'Problem with populating the db'
 
         # standard filename change
-        nugid = change_filename_from('nugid1.freex','new_nugid1.freex')
+        nugid = change_filename_from(u'nugid1.freex', u'new_nugid1.freex')
         self.assertEquals(nugid,1)
-        self.assertEquals(get_filename(1),'new_nugid1.freex')
-        self.assertEquals(False, 'nugid1.freex' in get_all_filenames())
-        self.assertEquals(True, 'new_nugid1' in get_aliases(1))
+        self.assertEquals(get_filename(1), u'new_nugid1.freex')
+        self.assertEquals(False, u'nugid1.freex' in get_all_filenames())
+        self.assertEquals(True, u'new_nugid1' in get_aliases(1))
 
         # filename with dots in
-        nugid = change_filename_from('nugid2.freex','nugid2.with.dots.freex')
+        nugid = change_filename_from(u'nugid2.freex', u'nugid2.with.dots.freex')
         self.assertEquals(nugid,2)
         self.assertEquals(get_filename(2),'nugid2.with.dots.freex')
-        self.assertEquals(False, 'nugid2.freex' in get_all_filenames())
-        self.assertEquals(True, 'nugid2.with.dots' in get_aliases(2))
+        self.assertEquals(False, u'nugid2.freex' in get_all_filenames())
+        self.assertEquals(True, u'nugid2.with.dots' in get_aliases(2))
 
         # neither filename can be none or empty
-        self.assertRaises(CantBeNone, change_filename_from,'nugid1.freex', None)
-        self.assertRaises(CantBeNone, change_filename_from, None, 'newfile.freex')
-        self.assertRaises(CantBeEmptyString, change_filename_from,'nugid1.freex', '')
-        self.assertRaises(CantBeEmptyString, change_filename_from,'', 'newfile.freex')
+        self.assertRaises(CantBeNone, change_filename_from, u'nugid1.freex', None)
+        self.assertRaises(CantBeNone, change_filename_from, None, u'newfile.freex')
+        self.assertRaises(CantBeEmptyString, change_filename_from, u'nugid1.freex', u'')
+        self.assertRaises(CantBeEmptyString, change_filename_from, u'', u'newfile.freex')
 
         # OLD and NEW can't be identical
         self.assertRaises(
             FilenameAlreadyExists,
-            change_filename_from, 'nugid1.freex', 'nugid1.freex')
+            change_filename_from, u'nugid1.freex', u'nugid1.freex')
 
         # the OLD must exist
-        self.assertRaises(NonexistentFilename, change_filename_from, 'newfile.freex', 'nugid2.freex')
-        self.assertRaises(NonexistentFilename, change_filename_from, 'newfile.freex', 'newfile2.freex')
+        self.assertRaises(NonexistentFilename, change_filename_from, u'newfile.freex', u'nugid2.freex')
+        self.assertRaises(NonexistentFilename, change_filename_from, u'newfile.freex', u'newfile2.freex')
         
         # the NEW must not exist
-        self.assertRaises(FilenameAlreadyExists, change_filename_from, 'nugid3.freex', 'nugid4.freex')
+        self.assertRaises(FilenameAlreadyExists, change_filename_from, u'nugid3.freex', u'nugid4.freex')
 
 
 
@@ -362,33 +362,33 @@ class FsqaTests(BaseTests):
         self.populate()
 
         first_order_cases = (
-            ('', get_all_aliases()),
+            (u'', get_all_aliases()),
             # ('*', get_all_aliases()),
             
-            ('nug', get_all_aliases()),
+            (u'nug', get_all_aliases()),
 
             # any nuggets that begin with nugid1*, i.e. this
             # is not yet actually looking for tag-children
-            ('nugid1', ['nugid1','nugid1a','nugid1b','nugid1c']),
+            (u'nugid1', ['nugid1','nugid1a','nugid1b','nugid1c']),
             # this time the stub 'blah*' doesn't match anything
-            ('blah', []),
+            (u'blah', []),
             
-            ('nugid1/', ['nugid1/nugid2','nugid1/nugid2a','nugid1/nugid2b']),
+            (u'nugid1/', ['nugid1/nugid2','nugid1/nugid2a','nugid1/nugid2b']),
 
             # again, the stub doesn't matter
-            ('nugid1/blah', ['nugid1/nugid2','nugid1/nugid2a','nugid1/nugid2b']),
+            (u'nugid1/blah', ['nugid1/nugid2','nugid1/nugid2a','nugid1/nugid2b']),
 
             # note the slash on nugid4 (because it's a
             # suggested tag-parent for nugid3)
-            ('nugid2/', ['nugid2/nugid3', 'nugid2/nugid3a',
+            (u'nugid2/', ['nugid2/nugid3', 'nugid2/nugid3a',
                          'nugid2/nugid4/', 'nugid2/nugid4a/']),
 
-            ('nugid2/nugid1/',[]),
+            (u'nugid2/nugid1/',[]),
 
             # conjunction of two parents
             #
             # for now, it's not, so this is the test
-            ('nugid4a/nugid2/',['nugid4a/nugid2/nugid3','nugid4a/nugid2/nugid3a']),
+            (u'nugid4a/nugid2/',['nugid4a/nugid2/nugid3','nugid4a/nugid2/nugid3a']),
 
             # xxx - in the future, this function should do a
             # LIKE query on the stub. right now, it doesn't
@@ -399,7 +399,7 @@ class FsqaTests(BaseTests):
             # is that nugid2 isn't a parent here, it's a
             # stub
             #
-            # ('nugid4a/nugid2',['nugid4a/nugid2a/','nugid4a/nugid2/']),
+            # (u'nugid4a/nugid2',['nugid4a/nugid2a/','nugid4a/nugid2/']),
             )
 
         for inp,desired_outp in first_order_cases:
@@ -411,14 +411,14 @@ class FsqaTests(BaseTests):
 
 
         second_order_cases = (
-            ('', get_all_aliases()),
             
-            ('nug', get_all_aliases()),
+            (u'nug', get_all_aliases()),
 
             # this should be exactly the same as above
             ('nugid1', ['nugid1','nugid1a','nugid1b','nugid1c']),
+            (u'nugid1', ['nugid1','nugid1a','nugid1b','nugid1c']),
             # the same is true if the stub itself doesn't match anything
-            ('blah', []),
+            (u'blah', []),
 
             # this is tricky to think about, but i think
             # it's right now
@@ -426,7 +426,7 @@ class FsqaTests(BaseTests):
             # 2 is a tag-child of 1, and 3 is a tag-child of
             # 2, so all the entries from both 1 and 2 should
             # be included
-            ('nugid1/', ['nugid1/nugid2','nugid1/nugid2a','nugid1/nugid2b',
+            (u'nugid1/', ['nugid1/nugid2','nugid1/nugid2a','nugid1/nugid2b',
                          'nugid1/nugid3','nugid1/nugid3a',
             # on top of this, we have to suggest potential
             # extra tag-parents by which the 1s can be
@@ -451,7 +451,7 @@ class FsqaTests(BaseTests):
             #
             # in other words, this will return the same
             # output as 'nugid1/'
-            ('nugid1/blah', ['nugid1/nugid2','nugid1/nugid2a','nugid1/nugid2b',
+            (u'nugid1/blah', ['nugid1/nugid2','nugid1/nugid2a','nugid1/nugid2b',
                              'nugid1/nugid3','nugid1/nugid3a',
                              'nugid1/nugid2/','nugid1/nugid2a/','nugid1/nugid2b/',
                              'nugid1/nugid4/','nugid1/nugid4a/',
@@ -459,16 +459,16 @@ class FsqaTests(BaseTests):
 
             # note the slash on nugid4 (because it's a
             # suggested tag-parent for nugid3)
-            ('nugid2/', ['nugid2/nugid3', 'nugid2/nugid3a',
+            (u'nugid2/', ['nugid2/nugid3', 'nugid2/nugid3a',
                          'nugid2/nugid4/', 'nugid2/nugid4a/']),
 
-            ('nugid2/nugid1/', ['nugid2/nugid1/nugid3','nugid2/nugid1/nugid3a',
+            (u'nugid2/nugid1/', ['nugid2/nugid1/nugid3','nugid2/nugid1/nugid3a',
                                 'nugid2/nugid1/nugid4/','nugid2/nugid1/nugid4a/']),
 
             # conjunction of two parents
             #
             # for now, it's not, so this is the test
-            ('nugid4a/nugid2/',['nugid4a/nugid2/nugid3','nugid4a/nugid2/nugid3a']),
+            (u'nugid4a/nugid2/',['nugid4a/nugid2/nugid3','nugid4a/nugid2/nugid3a']),
 
             # xxx - in the future, this function should do a
             # LIKE query on the stub. right now, it doesn't
@@ -479,7 +479,7 @@ class FsqaTests(BaseTests):
             # is that nugid2 isn't a parent here, it's a
             # stub
             #
-            # ('nugid4a/nugid2',['nugid4a/nugid2a/','nugid4a/nugid2/']),
+            # (u'nugid4a/nugid2',['nugid4a/nugid2a/','nugid4a/nugid2/']),
             )
 
         for inp,desired_outp in second_order_cases:
@@ -496,8 +496,8 @@ class FsqaTests(BaseTests):
             #
             # xxx - it would be better if it just ignored
             # the tag-parent...
-            ('blah/', NonexistentAlias),
-            ('blah/nug', NonexistentAlias),
+            (u'blah/', NonexistentAlias),
+            (u'blah/nug', NonexistentAlias),
             )
 
         for inp,exc in aberrant_cases:
@@ -525,11 +525,11 @@ class FsqaTests(BaseTests):
 
         # get_tag_parents_delim_a takes in an alias as input
         alias_cases = ( # inp, desired_outp
-            ('nugid1', ''),
-            ('nugid2', 'nugid1'),
-            ('nugid2a', 'nugid1'),
-            ('nugid3', 'nugid2; nugid4'),
-            ('nugid4', ''),
+            (u'nugid1', ''),
+            (u'nugid2', 'nugid1'),
+            (u'nugid2a', 'nugid1'),
+            (u'nugid3', 'nugid2; nugid4'),
+            (u'nugid4', ''),
             )
         for inp,desired_outp in alias_cases:
             actual_outp = get_tag_parents_delim_a(inp)
@@ -544,7 +544,7 @@ class FsqaTests(BaseTests):
             (NonexistentNugid, get_tag_parents_delim, 100),
             (NonexistentAlias, get_tag_parents_delim_a, 'blah'),
             (ShouldBeInt, get_tag_parents_delim, 'blah'), 
-            (ShouldBeStr, get_tag_parents_delim_a, 100),
+            (ShouldBeUnicode, get_tag_parents_delim_a, 100),
             )
         for exc,func,inp in aberrant_cases:
             self.assertRaises(exc, func, inp)
@@ -560,7 +560,7 @@ class FsqaTests(BaseTests):
         self.populate()
 
         # just to make things a little more interesting
-        add_tag_child_a_to_tag_parent_a('nugid5','nugid4')
+        add_tag_child_a_to_tag_parent_a(u'nugid5','nugid4')
         
         # get_tag_children_delim takes in a nugid as input
         nugid_cases = ( # inp, desired_outp
@@ -575,11 +575,11 @@ class FsqaTests(BaseTests):
 
         # get_tag_children_delim_a takes in an alias as input
         alias_cases = ( # inp, desired_outp
-            ('nugid1',  'nugid2'),
-            ('nugid2',  'nugid3'),
-            ('nugid2a', 'nugid3'),
-            ('nugid3',  ''),
-            ('nugid4',  'nugid3; nugid5'),
+            (u'nugid1',  'nugid2'),
+            (u'nugid2',  'nugid3'),
+            (u'nugid2a', 'nugid3'),
+            (u'nugid3',  ''),
+            (u'nugid4',  'nugid3; nugid5'),
             )
         for inp,desired_outp in alias_cases:
             actual_outp = get_tag_children_delim_a(inp)
@@ -594,7 +594,7 @@ class FsqaTests(BaseTests):
             (NonexistentNugid, get_tag_children_delim, 100),
             (NonexistentAlias, get_tag_children_delim_a, 'blah'),
             (ShouldBeInt, get_tag_children_delim, 'blah'), 
-            (ShouldBeStr, get_tag_children_delim_a, 100),
+            (ShouldBeUnicode, get_tag_children_delim_a, 100),
             )
         for exc,func,inp in aberrant_cases:
             self.assertRaises(exc, func, inp)
@@ -623,11 +623,11 @@ class FsqaTests(BaseTests):
             self.assertEquals(desired_outp, actual_outp)
 
         alias_cases = ( # inp, desired_outp
-            ('nugid1',  []),
-            ('nugid2',  ['nugid1']),
-            ('nugid2a', ['nugid1']),
-            ('nugid3',  ['nugid2', 'nugid4']),
-            ('nugid4',  []),
+            (u'nugid1',  []),
+            (u'nugid2',  ['nugid1']),
+            (u'nugid2a', ['nugid1']),
+            (u'nugid3',  ['nugid2', 'nugid4']),
+            (u'nugid4',  []),
             )
         for inp,desired_outp in alias_cases:
             actual_outp = get_tag_parents_for_a(inp)
@@ -645,7 +645,7 @@ class FsqaTests(BaseTests):
         aberrant_cases = ( # exception, function, inp
             (NonexistentAlias, get_tag_parents_for_a, 'blah'),
             (ShouldBeInt, get_tag_parents_for, 'blah'), 
-            (ShouldBeStr, get_tag_parents_for_a, 100),
+            (ShouldBeUnicode, get_tag_parents_for_a, 100),
             )
         for exc,func,inp in aberrant_cases:
             self.assertRaises(exc, func, inp)
@@ -660,7 +660,7 @@ class FsqaTests(BaseTests):
         self.populate()
 
         # just to make things a little more interesting
-        add_tag_child_a_to_tag_parent_a('nugid5','nugid4')
+        add_tag_child_a_to_tag_parent_a(u'nugid5','nugid4')
         
         nugid_cases = ( # inp, desired_outp
             (1, [2]),
@@ -673,11 +673,11 @@ class FsqaTests(BaseTests):
             self.assertEquals(desired_outp, actual_outp)
 
         alias_cases = ( # inp, desired_outp
-            ('nugid1',  ['nugid2']),
-            ('nugid2',  ['nugid3']),
-            ('nugid2a', ['nugid3']),
-            ('nugid3',  []),
-            ('nugid4',  ['nugid3','nugid5']),
+            (u'nugid1',  ['nugid2']),
+            (u'nugid2',  ['nugid3']),
+            (u'nugid2a', ['nugid3']),
+            (u'nugid3',  []),
+            (u'nugid4',  ['nugid3','nugid5']),
             )
         for inp,desired_outp in alias_cases:
             actual_outp = get_tag_children_for_a(inp)
@@ -695,7 +695,7 @@ class FsqaTests(BaseTests):
         aberrant_cases = ( # exception, function, inp
             (NonexistentAlias, get_tag_children_for_a, 'blah'),
             (ShouldBeInt, get_tag_children_for, 'blah'), 
-            (ShouldBeStr, get_tag_children_for_a, 100),
+            (ShouldBeUnicode, get_tag_children_for_a, 100),
             )
         for exc,func,inp in aberrant_cases:
             self.assertRaises(exc, func, inp)
@@ -721,17 +721,16 @@ class FsqaTests(BaseTests):
         # should return a new nugid with False
         max_id = max(get_all_ids())
         self.assertEquals((max_id+1,False),
-                         get_or_create_nugid_from_alias('nugid100'))
+                         get_or_create_nugid_from_alias(u'nugid100'))
 
         # aberrant cases
         self.assertRaises(NeedsNoExtension,
                           get_or_create_nugid_from_alias,
                           'nugid1.freex')
-        self.assertRaises(ShouldBeStr,
+        self.assertRaises(ShouldBeUnicode,
                           get_or_create_nugid_from_alias,
                           1)
         self.assertEquals((None,False),
-                         get_or_create_nugid_from_alias(''))
         self.assertEquals((None,False),
                          get_or_create_nugid_from_alias(None))
         
@@ -746,30 +745,30 @@ class FsqaTests(BaseTests):
         # 3, 4 + 5 are going to be tag-children of 2
         #
         # 3 is already a tag child of 2
-        add_tag_child_a_to_tag_parent_a('nugid4','nugid2')
-        add_tag_child_a_to_tag_parent_a('nugid5','nugid2')
+        add_tag_child_a_to_tag_parent_a(u'nugid4','nugid2')
+        add_tag_child_a_to_tag_parent_a(u'nugid5','nugid2')
         self.assertEquals(
             ['nugid3','nugid4','nugid5'],
-            intersect_tag_children_a_from_multiple_tag_parents_a('nugid2'))
+            intersect_tag_children_a_from_multiple_tag_parents_a(u'nugid2'))
         
         # 2 and 5 are going to be tag-children of 1
         #
-        add_tag_child_a_to_tag_parent_a('nugid2','nugid1')
-        add_tag_child_a_to_tag_parent_a('nugid5','nugid1')
+        add_tag_child_a_to_tag_parent_a(u'nugid2','nugid1')
+        add_tag_child_a_to_tag_parent_a(u'nugid5','nugid1')
         self.assertEquals(
             ['nugid2','nugid5'],
-            intersect_tag_children_a_from_multiple_tag_parents_a('nugid1'))
+            intersect_tag_children_a_from_multiple_tag_parents_a(u'nugid1'))
        
         # so the only nugget that has *both* nugid1 and
         # nugid2 as tag-parents is nugid5
         self.assertEquals(
-            ['nugid5'],
-            intersect_tag_children_a_from_multiple_tag_parents_a(['nugid1','nugid2']))
+            [u'nugid5'],
+            intersect_tag_children_a_from_multiple_tag_parents_a([u'nugid1', u'nugid2']))
 
         # there's nothing that has nugid1, nugid2 *and* nugid3 as tag-parents
         self.assertEquals(
             [],
-            intersect_tag_children_a_from_multiple_tag_parents_a(['nugid1','nugid2','nugid3']))
+            intersect_tag_children_a_from_multiple_tag_parents_a([u'nugid1', u'nugid2', u'nugid3']))
 
         empty_air = (None, '', [])
         # feeding in any of these different kinds of empty
@@ -781,9 +780,9 @@ class FsqaTests(BaseTests):
 
         self.assertRaises(ShouldBeList,intersect_tag_children_a_from_multiple_tag_parents_a,
                           100)
-        self.assertRaises(ShouldBeStr,intersect_tag_children_a_from_multiple_tag_parents_a,
+        self.assertRaises(ShouldBeUnicode,intersect_tag_children_a_from_multiple_tag_parents_a,
                           [100])
-        self.assertRaises(ShouldBeStr,intersect_tag_children_a_from_multiple_tag_parents_a,
+        self.assertRaises(ShouldBeUnicode,intersect_tag_children_a_from_multiple_tag_parents_a,
                           ['nugid1',100])
 
     
@@ -796,20 +795,20 @@ class FsqaTests(BaseTests):
         self.populate()
         # initially, none of the nuggets have been modified,
         # so their modtimes should be empty
-        self.assertEquals('',get_last_modtime(1))
+        self.assertEquals(u'',get_last_modtime(1))
 
         # none of these action types should change the
         # modtime, so it should still be empty
         nonmod_actions = [1,3,4,5,6,7,8,9]
         for action_type in nonmod_actions:
-            self.assertEquals('',get_last_modtime(1))
+            self.assertEquals(u'',get_last_modtime(1))
             
         # these actions are supposed to modify the modtime,
         # so adding a timestamp with any of these action
         # types should update the modtime
         mod_actions = [2]
         for action_type in mod_actions:
-            new_ts = str(self.remove_microseconds(add_timestamp(1,action_type)))
+            new_ts = unicode(self.remove_microseconds(add_timestamp(1,action_type)))
             self.assertEquals(new_ts,get_last_modtime(1))
 
         aberrants = (
@@ -860,7 +859,7 @@ class FsqaTests(BaseTests):
             
             # wrong type of first argument
             (ShouldBeInt, add_timestamp, 'nugid1',1),
-            (ShouldBeStr, add_timestamp_a, 1,1),
+            (ShouldBeUnicode, add_timestamp_a, 1,1),
 
             # wrong type of action
             (ShouldBeInt, add_timestamp, 1,'load'),
@@ -887,7 +886,7 @@ class FsqaTests(BaseTests):
         """Datetime from string"""
 
         desired_dt = datetime.datetime.now()
-        actual_dt = dt_from_str( str(desired_dt) )
+        actual_dt = dt_from_str( unicode(desired_dt) )
         self.assertEquals(True,
                          self.within_two_seconds(desired_dt,actual_dt))
 
@@ -976,14 +975,14 @@ class FsqaTests(BaseTests):
         aberrants = (
             # wrong type of first argument
             (ShouldBeInt, put_aliases_delim, 'blah', new_aliases_str),
-            (ShouldBeStr, put_aliases_delim_a, 1, new_aliases_str),
+            (ShouldBeUnicode, put_aliases_delim_a, 1, new_aliases_str),
             # None for first argument
             (CantBeNone, put_aliases_delim, None, new_aliases_str),
             (CantBeNone, put_aliases_delim_a, None, new_aliases_str),
 
             # wrong type of second argument
-            (ShouldBeStr, put_aliases_delim, 1, 1),
-            (ShouldBeStr, put_aliases_delim_a, 'nugid1', 1),
+            (ShouldBeUnicode, put_aliases_delim, 1, 1),
+            (ShouldBeUnicode, put_aliases_delim_a, 'nugid1', 1),
             # None for second argument
             (CantBeNone, put_aliases_delim, 1, None),
             (CantBeNone, put_aliases_delim_a, 'nugid1', None),
@@ -1040,7 +1039,7 @@ class FsqaTests(BaseTests):
         desired_filename1 = 'blah1.freex'
         desired_filename2 = 'blah2.freex'
         put_filename(1,desired_filename1)
-        put_filename_a('nugid2',desired_filename2)
+        put_filename_a(u'nugid2',desired_filename2)
         # simple test to see if it updated
         self.assertEquals(desired_filename1,get_filename(1))
         self.assertEquals(desired_filename2,get_filename(2))
@@ -1053,10 +1052,10 @@ class FsqaTests(BaseTests):
         aberrants = (
             # first input is wrong type
             (ShouldBeInt, put_filename, 'nugid1','blah1000.freex'),
-            (ShouldBeStr, put_filename_a, 1,'blah1000.freex'),
+            (ShouldBeUnicode, put_filename_a, 1,'blah1000.freex'),
             # filename is wrong type
-            (ShouldBeStr, put_filename, 1,1),
-            (ShouldBeStr, put_filename_a, 'nugid1',1),
+            (ShouldBeUnicode, put_filename, 1,1),
+            (ShouldBeUnicode, put_filename_a, 'nugid1',1),
 
             # weirdly, this raises an exception whereas
             # put_filename just returns None - xxx
@@ -1125,7 +1124,7 @@ class FsqaTests(BaseTests):
         # it's dumb that they return different things, but
         # we're not going to change that now
         for id in get_all_ids():
-            self.assertEquals('#' + str(id),
+            self.assertEquals(u'#' + unicode(id),
                               get_alias_from_nugid(id))
             self.assertEquals([],
                               get_aliases(id))
@@ -1133,27 +1132,26 @@ class FsqaTests(BaseTests):
         # these fail, but they just return None
         #
         # no alias for nugid 1 called 'blah'
-        self.assertEquals(None, remove_alias(1,'blah'))
+        self.assertEquals(None, remove_alias(1, u'blah'))
         # 'nugid2' is not an alias for 2 (though it does
         # exist as an alias)
-        self.assertEquals(None, remove_alias(1,'nugid2'))
+        self.assertEquals(None, remove_alias(1, u'nugid2'))
 
         # reset things before testing the aberrant cases
         self.setUp()
         self.populate()
         aberrants = (
             # the nugid should be a number
-            (ShouldBeInt, 'nugid1','nugid2'),
+            (ShouldBeInt, u'nugid1', u'nugid2'),
             # the alias should be a string
-            (ShouldBeStr, 1,1),
+            (ShouldBeUnicode, 1,1),
             # neither NUGID nor ALIAS should be None
-            (CantBeNone, None,'nugid1'),
-            (CantBeNone, 1,None),
+            (CantBeNone, None, u'nugid1'),
+            (CantBeNone, 1, None),
             )
         for exc,inp_nugid,inp_alias in aberrants:
             self.assertRaises(exc, remove_alias,
                               inp_nugid, inp_alias)
-
 
 
 
@@ -1208,7 +1206,7 @@ class FsqaTests(BaseTests):
         # initially, 1 is the tag-parent of 2
         #
         # add 3 as a tag-child too
-        add_tag_child_a_to_tag_parent_a('nugid3','nugid1')
+        add_tag_child_a_to_tag_parent_a(u'nugid3','nugid1')
         self.assertEqual([2,3], get_tag_children_for(1))
         
         # try a basic test. confirm that removing the
@@ -1305,8 +1303,8 @@ class FsqaTests(BaseTests):
         # 3, 4 + 5 are going to be tag-children of 2
         #
         # 3 is already a tag child of 2, and of 4
-        add_tag_child_a_to_tag_parent_a('nugid4','nugid2')
-        add_tag_child_a_to_tag_parent_a('nugid5','nugid2')
+        add_tag_child_a_to_tag_parent_a(u'nugid4','nugid2')
+        add_tag_child_a_to_tag_parent_a(u'nugid5','nugid2')
 
         cases = (
             (['nugid3','nugid4','nugid5'], ['nugid2','nugid4']),
@@ -1321,14 +1319,14 @@ class FsqaTests(BaseTests):
             self.assertEquals(desired_outp,actual_outp)
 
         # these various forms of empty air should all return None
-        nones = ('',[],None)
+        nones = (u'',[],None)
         for inp in nones:
             self.assertEquals(None,
                              union_tag_parents_a_from_multiple_tag_children_a(inp))
 
         aberrants = (
-            (NonexistentAlias,['blah']),
-            (NonexistentAlias,'blah'),
+            (NonexistentAlias, [u'blah']),
+            (NonexistentAlias, u'blah'),
             (ShouldBeList,1),
             )
         for exc,inp in aberrants:
@@ -1385,7 +1383,7 @@ class FsqaTests(BaseTests):
         max_id = max(get_all_ids())
         put_tag_parents_delim(5,'nugid1 ; nugid6')
         self.assertEquals(max_id+1,
-                         get_nugid_from_alias('nugid6'))
+                         get_nugid_from_alias(u'nugid6'))
         self.assertEquals([1,max_id+1],
                          get_tag_parents_for(5))
 
@@ -1459,7 +1457,7 @@ class FsqaTests(BaseTests):
         max_id = max(get_all_ids())
         put_tag_children_delim(3,'nugid4 ; nugid6')
         self.assertEquals(max_id+1,
-                         get_nugid_from_alias('nugid6'))
+                         get_nugid_from_alias(u'nugid6'))
         self.assertEquals([4,max_id+1],
                          get_tag_children_for(3))
 
@@ -1491,7 +1489,7 @@ class FsqaTests(BaseTests):
         # and test a single pre-specified nugid, just for
         # good measure. we know that the nugid for 'nugid1'
         # is 1...
-        self.assertEquals(get_nugid_from_alias('nugid1'),1)
+        self.assertEquals(get_nugid_from_alias(u'nugid1'),1)
 
         self.assertRaises(NonexistentAlias,
                           get_nugid_from_alias,'nonexistnug')
@@ -1505,10 +1503,10 @@ class FsqaTests(BaseTests):
         self.assertRaises(NeedsNoExtension,
                           get_nugid_from_alias,'blah.freex')
 
-        self.assertRaises(ShouldBeStr,
+        self.assertRaises(ShouldBeUnicode,
                           get_nugid_from_alias,1)
 
-        self.assertRaises(ShouldBeStr,
+        self.assertRaises(ShouldBeUnicode,
                           get_nugid_from_alias,['nugid1'])
 
         # at the moment, it just returns None if you give it
@@ -1516,7 +1514,7 @@ class FsqaTests(BaseTests):
         # exception??? this will affect other
         # functions... xxx
         self.assertEquals(get_nugid_from_alias(None),None)
-        self.assertEquals(get_nugid_from_alias(''),None)
+        self.assertEquals(get_nugid_from_alias(u''),None)
         # self.assertRaises(EmptyString,
         #                   get_nugid_from_alias,'')
 
@@ -1552,7 +1550,7 @@ class FsqaTests(BaseTests):
 
 #         aberrants = (
 #             (ShouldBeList,1),
-#             (ShouldBeStr,['nugid1',1])
+#             (ShouldBeUnicode,['nugid1',1])
 #             )
 #         for exc,inp in aberrants:
 #             self.assertRaises(exc,get_nugid_from_alias_multi,inp)
@@ -1674,7 +1672,7 @@ class FsqaTests(BaseTests):
             self.assertEquals(get_contents_a(alias),content)
 
         self.assertRaises(ShouldBeInt,get_contents,'blah')
-        self.assertRaises(ShouldBeStr,get_contents_a,100)
+        self.assertRaises(ShouldBeUnicode,get_contents_a,100)
 
         self.assertRaises(NeedsNoExtension,get_contents_a,'blah.freex')
         self.assertRaises(NonexistentAlias,get_contents_a,'blah')
@@ -1704,7 +1702,7 @@ class FsqaTests(BaseTests):
         # strings, and they'll just cast them automatically???
         self.assertRaises(ShouldBeInt, get_filename, 'blah')
         # xxx
-        # self.assertRaises(ShouldBeStr, get_filename_a, 1)
+        # self.assertRaises(ShouldBeUnicode, get_filename_a, 1)
         
         self.assertRaises(CantBeNone, get_filename, None)
         self.assertRaises(CantBeNone, get_filename_a, None)
@@ -1712,7 +1710,7 @@ class FsqaTests(BaseTests):
         # self.assertRaises(NonexistentNugid, get_filename, 100)
         self.assertEquals(None,get_filename(100))
         # self.assertRaises(NonexistentAlias, get_filename_a, 'blah')
-        self.assertEquals(None,get_filename_a('blah'))
+        self.assertEquals(None,get_filename_a(u'blah'))
                 
 
 
@@ -1728,7 +1726,7 @@ class FsqaTests(BaseTests):
             filename = desired[1]
             self.assertEquals(nugid,get_nugid_from_filename(filename))
 
-        self.assertEquals(get_nugid_from_filename('nugid1.freex'),1)
+        self.assertEquals(get_nugid_from_filename(u'nugid1.freex'),1)
 
         self.assertRaises(NonexistentFilename,
                           get_nugid_from_filename,'nonexistnug.freex')
@@ -1739,7 +1737,7 @@ class FsqaTests(BaseTests):
         # case
         self.assertRaises(NeedsExtension,
                           get_nugid_from_filename,'nugid1')
-        self.assertRaises(ShouldBeStr,
+        self.assertRaises(ShouldBeUnicode,
                           get_nugid_from_filename,1)
         self.assertRaises(CantBeNone,
                           get_nugid_from_filename,None)
@@ -1802,17 +1800,17 @@ class FsqaTests(BaseTests):
         self.assertEquals(False, exist_nugget(-3))
         self.assertEquals(False, exist_nugget(10))
         self.assertRaises(CantBeNone, exist_nugget, None)
-        self.assertRaises(ShouldBeInt, exist_nugget,'blah')
+        self.assertRaises(ShouldBeInt, exist_nugget, u'blah')
 
-        self.assertEquals(None, exist_nugget_a('blah'))
+        self.assertEquals(None, exist_nugget_a(u'blah'))
         # xxx - this is totally wrong. feeding in an empty
         # string should give you something like
         # None/False/exception, but instead you just get the
         # emptry string back
-        self.assertEquals(None, exist_nugget_a(''))
+        self.assertEquals(None, exist_nugget_a(u''))
         # xxx - both these next two should be exceptions
-        self.assertRaises(ShouldBeStr, exist_nugget_a, 1)
-        self.assertRaises(ShouldBeStr, exist_nugget_a, None)
+        self.assertRaises(ShouldBeUnicode, exist_nugget_a, 1)
+        self.assertRaises(ShouldBeUnicode, exist_nugget_a, None)
 
 
 
@@ -1870,8 +1868,8 @@ class FsqaTests(BaseTests):
 
         nugid1_aliases_delim = 'nugid1; nugid1a; nugid1b; nugid1c'
         self.assertEquals(nugid1_aliases_delim, get_aliases_delim(1))
-        self.assertEquals(nugid1_aliases_delim, get_aliases_delim_a('nugid1'))
-        self.assertEquals(nugid1_aliases_delim, get_aliases_delim_a('nugid1a'))
+        self.assertEquals(nugid1_aliases_delim, get_aliases_delim_a(u'nugid1'))
+        self.assertEquals(nugid1_aliases_delim, get_aliases_delim_a(u'nugid1a'))
 
         self.assertRaises(NonexistentNugid, get_aliases, 100)
         self.assertRaises(NonexistentNugid, get_aliases_delim, 100)
@@ -1880,7 +1878,7 @@ class FsqaTests(BaseTests):
         self.assertRaises(ShouldBeInt, get_aliases, 'blah')
         self.assertRaises(ShouldBeInt, get_aliases_delim, 'blah')
 
-        self.assertRaises(ShouldBeStr, get_aliases_delim_a, 1)
+        self.assertRaises(ShouldBeUnicode, get_aliases_delim_a, 1)
 
         self.assertRaises(CantBeNone, get_aliases, None)
         self.assertRaises(CantBeNone, get_aliases_delim, None)
@@ -1906,7 +1904,7 @@ class FsqaTests(BaseTests):
             all_aliases.append(remove_ext(filename))
         for nugid,alias in self.fake_aliases:
             all_aliases.append(alias)
-        self.assertEquals(all_aliases, get_all_aliases())
+        self.assertEquals(sorted(all_aliases), get_all_aliases())
 
         # add_nugget and add_alias check that if you add new
         # nuggets or aliases that they show up too in the
@@ -1934,26 +1932,26 @@ class FsqaTests(BaseTests):
         # check that it removes its aliases too
         #
         # xxx should be False
-        self.assertEquals(None, exist_nugget_a('nugid1a'))
-        all_aliases.remove('nugid1')
-        all_aliases.remove('nugid1a')
-        all_aliases.remove('nugid1b')
-        all_aliases.remove('nugid1c')
+        self.assertEquals(None, exist_nugget_a(u'nugid1a'))
+        all_aliases.remove(u'nugid1')
+        all_aliases.remove(u'nugid1a')
+        all_aliases.remove(u'nugid1b')
+        all_aliases.remove(u'nugid1c')
         self.assertEquals(all_aliases,get_all_aliases())
 
         # delete a nugget using its alias
         self.setUp()
         self.populate()
         all_aliases = get_all_aliases()
-        remove_nugget_a('nugid1a')
+        remove_nugget_a(u'nugid1a')
         # check the nugid doesn't exist
         self.assertEquals(False, exist_nugget(1))
         # check that it removes its aliases too
-        self.assertEquals(None, exist_nugget_a('nugid1a'))
-        all_aliases.remove('nugid1')
-        all_aliases.remove('nugid1a')
-        all_aliases.remove('nugid1b')
-        all_aliases.remove('nugid1c')
+        self.assertEquals(None, exist_nugget_a(u'nugid1a'))
+        all_aliases.remove(u'nugid1')
+        all_aliases.remove(u'nugid1a')
+        all_aliases.remove(u'nugid1b')
+        all_aliases.remove(u'nugid1c')
         self.assertEquals(all_aliases,get_all_aliases())
 
         # deal with nonexistent nuggets
@@ -1971,9 +1969,9 @@ class FsqaTests(BaseTests):
         self.assertRaises(ShouldBeInt, remove_nugget, 'nugid1')
         self.assertRaises(ShouldBeInt, remove_nugget, 'blah')
         self.assertRaises(CantBeNone, remove_nugget, None)
-        self.assertRaises(ShouldBeStr, remove_nugget_a, 1)
-        self.assertRaises(ShouldBeStr, remove_nugget_a, 100)
-        self.assertRaises(ShouldBeStr, remove_nugget_a, None)
+        self.assertRaises(ShouldBeUnicode, remove_nugget_a, 1)
+        self.assertRaises(ShouldBeUnicode, remove_nugget_a, 100)
+        self.assertRaises(ShouldBeUnicode, remove_nugget_a, None)
         
 
 
@@ -2009,7 +2007,7 @@ class FsqaTests(BaseTests):
         # this is the list of aliases before we add the nugget
         all_aliases = get_all_aliases()
 
-        new_nugid = add_nugget('a new nugget.freex','this is the content')
+        new_nugid = add_nugget(u'a new nugget.freex','this is the content')
 
         # at the moment, we're requiring that the new
         # nugget's ID be one greater than the largest nugid
@@ -2026,16 +2024,16 @@ class FsqaTests(BaseTests):
         
         # adding a nugget should cause its alias to be added
         # to the list of all aliases in the database
-        all_aliases.append('a new nugget')
-        self.assertEquals(all_aliases,get_all_aliases())
+        all_aliases.append(u'a new nugget')
+        self.assertEquals(sorted(all_aliases), get_all_aliases())
 
-        self.assertEquals('this is the content', get_contents(new_nugid))
+        self.assertEquals(u'this is the content', get_contents(new_nugid))
 
         # check that the alias is created correctly if the
         # filename has dots in it
-        new_nugid = add_nugget('a.new.nugget.freex','this is the content')
-        self.assertEquals('a.new.nugget',get_alias_from_nugid(new_nugid))
-        self.assertEquals(new_nugid,get_nugid_from_filename('a.new.nugget.freex'))
+        new_nugid = add_nugget(u'a.new.nugget.freex','this is the content')
+        self.assertEquals(u'a.new.nugget',get_alias_from_nugid(new_nugid))
+        self.assertEquals(new_nugid,get_nugid_from_filename(u'a.new.nugget.freex'))
 
         # the filename has to have a '.freex' extension
         self.assertRaises(NeedsExtension, add_nugget, 'blah', 'new content')
@@ -2052,7 +2050,8 @@ class FsqaTests(BaseTests):
         # SQLError/IntegrityError. i don't know how to test
         # that it's specifically a uniqueness exception, so
         # i'm just going to assertRaises for that
-        self.assertRaises(sqlalchemy.exceptions.IntegrityError, add_nugget, 'nugid1.freex', 'new content')
+        self.assertRaises(sqlalchemy.exc.IntegrityError, add_nugget,
+                          u'nugid1.freex', u'new content')
 
 
 
@@ -2073,19 +2072,19 @@ class FsqaTests(BaseTests):
         all_aliases = get_all_aliases()
         
         add_alias(nugid,'a new alias')
-        aliases.append('a new alias')
-        all_aliases.append('a new alias')
+        aliases.append(u'a new alias')
+        all_aliases.append(u'a new alias')
         
-        self.assertEquals(aliases,get_aliases(nugid))
-        self.assertEquals(all_aliases,get_all_aliases())
+        self.assertEquals(aliases, get_aliases(nugid))
+        self.assertEquals(sorted(all_aliases), get_all_aliases())
 
         # the nugid must be an int
-        self.assertRaises(ShouldBeInt, add_alias, 'blah', 'another new alias')
-        self.assertRaises(ShouldBeInt, add_alias, 'nugid1', 'another new alias')
-        self.assertRaises(CantBeNone, add_alias, None, 'another new alias')
+        self.assertRaises(ShouldBeInt, add_alias, u'blah', u'another new alias')
+        self.assertRaises(ShouldBeInt, add_alias, u'nugid1', u'another new alias')
+        self.assertRaises(CantBeNone, add_alias, None, u'another new alias')
 
         # the alias must be a string
-        self.assertRaises(ShouldBeStr, add_alias, 1, 100)
+        self.assertRaises(ShouldBeUnicode, add_alias, 1, 100)
         self.assertRaises(CantBeNone, add_alias, 1, None)
 
         # xxx - should there be an add_alias_a???
@@ -2098,7 +2097,7 @@ class FsqaTests(BaseTests):
         # the user...
         #
         # self.assertRaises(AliasAlreadyExists, add_alias, 1, 'nugid1')
-        self.assertEquals(None, add_alias(1,'nugid1'))
+        self.assertEquals(None, add_alias(1, u'nugid1'))
 
         # shouldn't be able to add an alias to a nugget if
         # that alias already exists for another nugget
@@ -2108,7 +2107,7 @@ class FsqaTests(BaseTests):
         # this make sense???
         # don't know how to catch the db errors
         # self.assertRaises(AliasAlreadyExists, add_alias, 3, 'nugid1')
-        self.assertRaises(DBError, add_alias, 3, 'nugid1')
+        self.assertRaises(DBError, add_alias, 3, u'nugid1')
         # xxx
         # self.assertRaises(AliasAlreadyExists, add_alias, 3, 'Nugid1')
         
@@ -2119,16 +2118,16 @@ class FsqaTests(BaseTests):
 
         """Checking for .freex extension"""
 
-        cases = ( ('blah.freex', True),
-                  ('.freex',True),
-                  ('a.new.nugget.freex',True),
-                  ('.freex.freex',True),
-                  ('blah',False),
-                  ('blah.muse',False),
-                  ('blah.freex2',False),
-                  ('blahfreex',False),
-                  ('something.freex.blah',False),
-                  ('',False),
+        cases = ( (u'blah.freex', True),
+                  (u'.freex',True),
+                  (u'a.new.nugget.freex',True),
+                  (u'.freex.freex',True),
+                  (u'blah',False),
+                  (u'blah.muse',False),
+                  (u'blah.freex2',False),
+                  (u'blahfreex',False),
+                  (u'something.freex.blah',False),
+                  (u'',False),
                   )
 
         for filename,ans in cases:
@@ -2136,7 +2135,7 @@ class FsqaTests(BaseTests):
 
         self.assertRaises(CantBeNone, has_ext, None)
 
-        self.assertRaises(ShouldBeStr,has_ext,100)
+        self.assertRaises(ShouldBeUnicode,has_ext,100)
 
         
 
@@ -2145,9 +2144,9 @@ class FsqaTests(BaseTests):
 
         """Adding .freex extension"""
 
-        self.assertEquals(add_ext('blah'),'blah.freex')
-        self.assertEquals(add_ext(''),'.freex')
-        self.assertEquals(add_ext('blah.free'),'blah.free.freex')
+        self.assertEquals(add_ext(u'blah'),'blah.freex')
+        self.assertEquals(add_ext(u''),'.freex')
+        self.assertEquals(add_ext(u'blah.free'),'blah.free.freex')
 
         self.assertRaises(ShouldBeStr,add_ext,100)
 
@@ -2160,13 +2159,13 @@ class FsqaTests(BaseTests):
 
         """Removing .freex extension"""
 
-        self.assertEquals(remove_ext('blah.freex'),'blah')
-        self.assertEquals(remove_ext('freex.freex'),'freex')
-        self.assertEquals(remove_ext('.freex.freex'),'.freex')
-        self.assertEquals(remove_ext('blah.freex.freex'),'blah.freex')
-        self.assertEquals(remove_ext('.freex'),'')
+        self.assertEquals(remove_ext(u'blah.freex'),'blah')
+        self.assertEquals(remove_ext(u'freex.freex'),'freex')
+        self.assertEquals(remove_ext(u'.freex.freex'),'.freex')
+        self.assertEquals(remove_ext(u'blah.freex.freex'),'blah.freex')
+        self.assertEquals(remove_ext(u'.freex'),'')
 
-        self.assertRaises(ShouldBeStr,remove_ext,100)
+        self.assertRaises(ShouldBeUnicode,remove_ext,100)
 
         self.assertRaises(NeedsExtension,remove_ext,'blah')
         self.assertRaises(NeedsExtension,remove_ext,'blahfreex')
@@ -2316,27 +2315,27 @@ class RegexTests(BaseTests):
         for alias in self.aliases:
             add_nugget(alias + '.freex', '')
         self.contents_matchranges = [
-            ('efgh1 but not the second, and another efaa1', [[0, 5], [38, 43]]),
-            ('abcd1 at the beginning', [[0, 5]]),
-            ('at the end abcd2', [[11, 16]]),
-            ('conversation - Greg Detre - 131003', [[0, 34]]),
-            ('multiple abcd1 abcd1 and abcd1', [[9, 14], [15, 20], [25, 30]]),
-            ('with spaces ijkl mnop1', [[12, 22]]),
-            ('punctuation abcd1, abcd2. efgh1; efgh2: efaa1-ijkl mnop1', [[12, 17], [19, 24], [26, 31], [33, 38], [40, 45], [46, 56]]),
-            ('capitalization1 but not second', [[0, 15]]),
-            ('Capitalization2 but not first', [[0, 15]]),
-            ('neither Capitalization1 nor capitalization2', []),
-            ('cites Alan, Brenda & Charlie (2003)', [[6, 35],]),
-            ('2006 should', [[0, 4]]),
-            ('xyz ', [[0, 3]]),
-            ('me typing should not be blocked by me teaching', [[3, 9], [35, 46]]),
-            ('Sp Capitalization', [[0, 17]]),
-            ('Sp      Capitalization', [[0, 22]]),
-            ('Sp\nCapitalization', [[0, 17]]),
-            ('Sp\n  Capitalization', [[0, 19]]),
-            ('Sp \n  Capitalization', [[0, 20]]),
-            ('common long start 1', []), # because we're ignoring too-common would have been [[0, 7]]
-            ('common long start 99', []), # because we're ignoring too-common. would have been [[0, 9]]
+            (u'efgh1 but not the second, and another efaa1', [[0, 5], [38, 43]]),
+            (u'abcd1 at the beginning', [[0, 5]]),
+            (u'at the end abcd2', [[11, 16]]),
+            (u'conversation - Greg Detre - 131003', [[0, 34]]),
+            (u'multiple abcd1 abcd1 and abcd1', [[9, 14], [15, 20], [25, 30]]),
+            (u'with spaces ijkl mnop1', [[12, 22]]),
+            (u'punctuation abcd1, abcd2. efgh1; efgh2: efaa1-ijkl mnop1', [[12, 17], [19, 24], [26, 31], [33, 38], [40, 45], [46, 56]]),
+            (u'capitalization1 but not second', [[0, 15]]),
+            (u'Capitalization2 but not first', [[0, 15]]),
+            (u'neither Capitalization1 nor capitalization2', []),
+            (u'cites Alan, Brenda & Charlie (2003)', [[6, 35],]),
+            (u'2006 should', [[0, 4]]),
+            (u'xyz ', [[0, 3]]),
+            (u'me typing should not be blocked by me teaching', [[3, 9], [35, 46]]),
+            (u'Sp Capitalization', [[0, 17]]),
+            (u'Sp      Capitalization', [[0, 22]]),
+            (u'Sp\nCapitalization', [[0, 17]]),
+            (u'Sp\n  Capitalization', [[0, 19]]),
+            (u'Sp \n  Capitalization', [[0, 20]]),
+            (u'common long start 1', []), # because we're ignoring too-common would have been [[0, 7]]
+            (u'common long start 99', []), # because we're ignoring too-common. would have been [[0, 9]]
             ]
         update_implicit_link_regexp_firstn()
 

@@ -550,6 +550,7 @@ class ShouldBeList(FreexSqlalchemyError): pass
 class CantBeList(FreexSqlalchemyError): pass
 
 class ShouldBeStr(FreexSqlalchemyError): pass
+class ShouldBeUnicode(FreexSqlalchemyError): pass
 
 class ShouldBeInt(FreexSqlalchemyError): pass
 
@@ -904,9 +905,11 @@ def get_contents_a(alias):
     Returns the nugget's contents as a string. Alias cannot
     include an extension. Throws NonexistentAlias.
     """
-    
-    if not isinstance(alias,str):
-        raise ShouldBeStr
+
+    if isinstance(alias,str):
+        alias = unicode(alias)
+    if not isinstance(alias,unicode):
+        raise ShouldBeUnicode
 
     if has_ext(alias):
         raise NeedsNoExtension
@@ -920,7 +923,7 @@ def get_contents_a(alias):
     if content is None:
         raise NonexistentAlias(alias)
 
-    return str(content[0])
+    return content[0]
 
 
 
@@ -945,7 +948,7 @@ def get_contents(nugid):
 
     # for some reason, fetchone returns a tuple if it finds
     # something, even though there will only be one object
-    return str(content[0])
+    return content[0]
 
 
 
@@ -961,11 +964,7 @@ def get_aliases(nugid):
 
     # get a list of unicode alias strings
 
-    aliases = [x[0] for x in fsqa.db.execute(sel).fetchall()]
-
-    # turn each unicode string into a normal string before
-    # returning
-    return [str(x) for x in aliases]
+    return [x[0] for x in fsqa.db.execute(sel).fetchall()]
 
 
 ############################################################
@@ -986,7 +985,7 @@ def get_aliases_delim(nugid):
     except:
         raise ShouldBeInt
     
-    return string.join(get_aliases(nugid),'; ')
+    return u'; '.join(get_aliases(nugid))
 
     interactions[get_alias_from_nugid] = ''
 
@@ -1036,18 +1035,18 @@ def get_tag_parents_delim(child_nugid):
     parent_aliases = get_tag_parents_for_a(
         get_alias_from_nugid(child_nugid) )
 
-    return string.join(parent_aliases,'; ')
+    return u'; '.join(parent_aliases)
 
 
 
 ############################################################
-def get_tag_parents_delim_slash(child_nugid, delim='/'):
+def get_tag_parents_delim_slash(child_nugid, delim=u'/'):
     # interactions[get_tag_parents_delim] = ''
 
     parent_aliases = get_tag_parents_for_a(
         get_alias_from_nugid(child_nugid) )
 
-    parent_aliases_slash = string.join(parent_aliases,delim)
+    parent_aliases_slash = delim.join(parent_aliases)
     # if there are already some entries, then put a slash on
     # the end to make it easy for users to add new tags
     if len(parent_aliases_slash):
@@ -1072,7 +1071,7 @@ def get_tag_children_delim(parent_nugid):
     child_aliases = get_tag_children_for_a( \
         get_alias_from_nugid(parent_nugid) )
 
-    return string.join(child_aliases,'; ')
+    return u'; '.join(child_aliases)
 
 
 
@@ -1095,15 +1094,17 @@ def add_alias(nugid,alias):
 
     if alias==None:
         raise CantBeNone
-    if not isinstance(alias,str):
-        raise ShouldBeStr
+    if isinstance(alias,str):
+        alias = unicode(alias)
+    if not isinstance(alias,unicode):
+        raise ShouldBeUnicode
     
     # die loudly if the nugget doesn't exist at all
     if not exist_nugget(nugid):
         raise NonexistentNugid
 
     # don't bother if it's just whitespace"
-    if not len(string.strip(alias)):
+    if not len(alias.strip()):
         return None
 
     existing_aliases = get_aliases(nugid)
@@ -1129,8 +1130,8 @@ def remove_alias(nugid,alias):
     # 070408
     if (nugid==None) | (alias==None):
         raise CantBeNone
-    if not isinstance(alias,str):
-        raise ShouldBeStr
+    if not isinstance(alias,unicode):
+        raise ShouldBeUnicode
     try:
         nugid = int(nugid)
     except:
@@ -1200,7 +1201,8 @@ def put_aliases_delim(nugid,aliases):
 
     if nugid==None: raise CantBeNone
     if aliases==None: raise CantBeNone
-    if not isinstance(aliases,str): raise ShouldBeStr
+    if isinstance(aliases, str): aliases = unicode(aliases)
+    if not isinstance(aliases, unicode): raise ShouldBeUnicode
     try: nugid = int(nugid)
     except: raise ShouldBeInt
 
@@ -1246,6 +1248,9 @@ def add_nugget(filename,content):
     of aliases. Creates an empty file called FILENAME if one
     doesn't already exist.    
     """
+    if isinstance(filename,str): filename = unicode(filename)
+    if isinstance(content,str): content = unicode(content)
+
     # interactions[add_nugget] = ''
 
     if filename==None:
@@ -1257,14 +1262,14 @@ def add_nugget(filename,content):
         raise NeedsExtension
 
     # make sure there are no carriage returns in the filename
-    filename = string.replace(filename,'\n',' ')
+    filename = filename.replace('\n',' ')
     # swap semi-colons for hyphens
-    filename = string.replace(filename,';','-')
+    filename = filename.replace(';', '-')
     # get rid of double spaces
-    filename = string.replace(filename,'  ',' ')
+    filename = filename.replace('  ', ' ')
     # strip away leading and trailing whitespace, though
     # there shouldn't be any
-    filename = string.strip(filename)
+    filename = filename.strip()
 
     if len(remove_ext(filename))==0:
         raise CantBeNone
@@ -1272,8 +1277,7 @@ def add_nugget(filename,content):
     # get rid of all the quotation marks, so that it doesn't
     # screw up the SQL command. this shouldn't be an issue,
     # but it is
-    content = string.replace(content,'"','')
-    content = str(content)
+    content = content.replace(u'"', u'')
 
     ins = 'insert into nuggets values (NULL,"%s","%s","%s")' % \
           (content,datetime.datetime.now(),filename)
@@ -1344,24 +1348,24 @@ def put_contents(nugid,content):
     try: nugid = int(nugid)
     except: raise ShouldBeNumber
 
-    # updated to work with Pymacs 0.23's unicode
-    try: content = str(content)
-    except:
-        import BeautifulSoup as bs
-        content = str(bs.BeautifulSoup(content))
+    # # updated to work with Pymacs 0.23's unicode
+    # try: content = str(content)
+    # except:
+    #     import BeautifulSoup as bs
+    #     content = str(bs.BeautifulSoup(content))
+    if isinstance(content, str):
+        content = unicode(content)
 
     # completely get rid of all the quotation marks
-    content = string.replace(content,'"','')
+    content = content.replace('"', '')
     # get rid of double carriage returns, but add in a
     # period, so that fulltext searches don't lump together
     # the beginning and end of a paragraph
-    content = string.replace(content,'\n\n',' . ')
+    content = content.replace('\n\n', ' . ')
     # completely get rid of single carriage returns
-    content = string.replace(content,'\n',' ')
+    content = content.replace('\n', ' ')
     # replace multiple spaces with a single one
     content = re.sub(' +', ' ', content)
-
-    content = str(content)
 
     # write the contents to the fsqa.db entry
     upd = 'UPDATE nuggets SET content = "%s" WHERE id = %d' % \
@@ -1461,15 +1465,16 @@ def filter_by_tag_parents(inp,
 
     Set display_sql=True if you'd like to see the SQL call
     that gets created.
-
     """
-    
+    if isinstance(inp, str): inp = unicode(inp)
+    if not isinstance(inp, unicode): raise ShouldBeUnicode(inp)
+
     # split the input string up into parts, based on '/' as
     # a delimiter (to make it feel like a filesystem). we're
-    # not running string.strip on the parts, because there
+    # not running unicode.strip on the parts, because there
     # shouldn't be whitespace around the '/' delimiters
     # during a completing-read
-    inp_parts = string.split(inp,'/')
+    inp_parts = unicode.split(inp, u'/')
 
     # all the parts except the last one are
     # parent_aliases. if there are one or zero parts, then
@@ -1503,7 +1508,7 @@ def filter_by_tag_parents(inp,
         if display_sql:
             print sel
         try:
-            return [str(x[0]) for x in fsqa.db.execute(sel).fetchall()]
+            return [x[0] for x in fsqa.db.execute(sel).fetchall()]
         except:
             return []
 
@@ -1526,7 +1531,7 @@ def filter_by_tag_parents(inp,
     # completions we return so that it matches the user's
     # input, otherwise emacs won't show them in the completion
     # list
-    preamb = string.join(parent_aliases,'/') + '/'
+    preamb = u'/'.join(parent_aliases) + u'/'
 
     # if the user fed in any "fulltext patterns" in quotes,
     # get a list of those, and remove them from the list of
@@ -1545,9 +1550,8 @@ def filter_by_tag_parents(inp,
         # content="%hello%" AND content="%world%"
         #
         # N.B. you need %%%s%% if you want to get %yourvar%
-        content_q = string.join(
-            ['content LIKE "%%%s%%"' % x for x in ft_patterns],
-            ' AND ')
+        content_q = u' AND '.join(
+            ['content LIKE "%%%s%%"' % x for x in ft_patterns])
         
         sel = """
         SELECT nuggets.id, alias FROM nuggets, aliases WHERE 
@@ -1557,8 +1561,8 @@ def filter_by_tag_parents(inp,
         """ % (content_q, alias_req, sortby)
 
         tag_children = fsqa.db.execute(sel).fetchall()
-        tag_children_nugids = [str(x[0]) for x in tag_children]
-        tag_children_aliases = [str(x[1]) for x in tag_children]
+        tag_children_nugids = [x[0] for x in tag_children]
+        tag_children_aliases = [x[1] for x in tag_children]
 
         parent_nugids = []
 
@@ -1662,9 +1666,8 @@ def filter_by_tag_parents(inp,
             # we're dealing with both tags and fulltext
 
             # e.g. content LIKE "%hello%" AND content LIKE "%world%"
-            content_q = string.join( \
-                        ['content LIKE "%%%s%%"' % x for x in ft_patterns], \
-                        ' AND ')
+            content_q = u' AND '.join( \
+                        ['content LIKE "%%%s%%"' % x for x in ft_patterns])
             
             complete_q = """
             SELECT nugid,alias FROM aliases, nuggets WHERE
@@ -1685,11 +1688,11 @@ def filter_by_tag_parents(inp,
 
         # get rid of all the carriage returns, and append a
         # semi-colon
-        complete_q = string.replace(complete_q,'\n','') + ';'
+        complete_q = complete_q.replace('\n', '') + u';'
 
         tag_children = fsqa.db.execute(complete_q).fetchall()
-        tag_children_nugids = [str(x[0]) for x in tag_children]
-        tag_children_aliases = [str(x[1]) for x in tag_children]
+        tag_children_nugids = [unicode(x[0]) for x in tag_children]
+        tag_children_aliases = [unicode(x[1]) for x in tag_children]
 
     # now it's time to suggest some tag parents (like
     # subdirectories, to filter the search further)
@@ -1709,15 +1712,13 @@ def filter_by_tag_parents(inp,
         # suggest away!
 
         # these are going to go into 'in (%s)' SQL queries
-        union_strlist = '%s' % string.join(
-            ['"%s"' % x for x in tag_children_nugids],
-            ', ')
+        union_strlist = '%s' % u', '.join(
+            ['"%s"' % x for x in tag_children_nugids])
 
         # this is so we don't suggest back parents that the
         # user has already used to filter things by
-        parent_nugid_list = string.join(
-            [str(x) for x in parent_nugids],
-            ', ')
+        parent_nugid_list = u', '.join(
+            [unicode(x) for x in parent_nugids])
         
         # now we want to find the tag-parents that are common to
         # all the tag-children, and suggest them as possible
@@ -1744,10 +1745,10 @@ def filter_by_tag_parents(inp,
 
         # get rid of all the carriage returns, and append a
         # semi-colon
-        complete_q = string.replace(complete_q,'\n','') + ';'
+        complete_q = complete_q.replace('\n', '') + u';'
 
         stp = fsqa.db.execute(complete_q).fetchall()
-        stp = [str(x[0]) for x in stp]
+        stp = [unicode(x[0]) for x in stp]
         stp = [preamb + x + '/' for x in stp]
 
     suggestions = []
@@ -1834,7 +1835,7 @@ def filter_by_tag_parents_fnames_only(inp,
     #                 inp_split = [x for x in inp.split('/') if x != '']
     #                 # then rejoin all the pieces, making sure the
     #                 # last piece gets a double-slash
-    #                 inp = string.join( inp_split[:-1], '/' ) + \
+    #                 inp = unicode.join( inp_split[:-1], '/' ) + \
     #                       '//' + inp_split[-1]
     #         else:
     #             # there's at least one single slash, but no
@@ -1898,7 +1899,7 @@ def edit_tag_parents_in_minibuffer_complete(inp):
         # aliases. that'll learn 'em
         return get_all_aliases()
 
-    inp_parts = string.split(inp, '/')
+    inp_parts = u'/'.split(inp)
 
     # we need to make sure not to prepend a '/' in the case
     # where there are no preceding aliases, e.g. if the user
@@ -1912,7 +1913,7 @@ def edit_tag_parents_in_minibuffer_complete(inp):
         preceding_aliases = inp_parts[:-1]
         
         # reassemble things
-        preamb = string.join(preceding_aliases,'/') + '/'
+        preamb = u'/'.join(preceding_aliases) + u'/'
 
     else:
         # there are no preceding aliases
@@ -1933,7 +1934,7 @@ def edit_tag_parents_in_minibuffer_complete(inp):
 
     # completions for the last alias
     last_alias_completions = fsqa.db.execute(complete_q).fetchall()
-    last_alias_completions = [str(x[0]) for x in last_alias_completions]
+    last_alias_completions = [x[0] for x in last_alias_completions]
 
     # full suggestions, each one comprising preceding
     # aliases and a possible completion for the last alias
@@ -1964,7 +1965,7 @@ def intersect_tag_children_a_from_multiple_tag_parents_a(parent_aliases):
     if not parent_aliases:
         return None
 
-    if isinstance(parent_aliases,str):
+    if isinstance(parent_aliases,unicode):
         # give up if it's a blank string
         if len(parent_aliases)==0:
             return None
@@ -1976,9 +1977,8 @@ def intersect_tag_children_a_from_multiple_tag_parents_a(parent_aliases):
     if not isinstance(parent_aliases,list):
         raise ShouldBeList
 
-    for alias in parent_aliases:
-        if not isinstance(alias,str):
-            raise ShouldBeStr
+    if not all_unicode(parent_aliases):
+        raise ShouldBeUnicode
     
     # child_alias_lists = map(get_tag_children_for_a,parent_aliases)
     child_alias_lists = [get_tag_children_for_a(x) for x in parent_aliases]
@@ -2000,7 +2000,7 @@ def union_tag_parents_a_from_multiple_tag_children_a(child_aliases):
     if not child_aliases:
         return None
 
-    if isinstance(child_aliases,str):
+    if isinstance(child_aliases,unicode):
         # give up if it's a blank string
         if len(child_aliases)==0:
             return None
@@ -2009,8 +2009,8 @@ def union_tag_parents_a_from_multiple_tag_children_a(child_aliases):
         else:
             child_aliases = [child_aliases]
 
-    if not isinstance(child_aliases,list):
-        raise ShouldBeList
+    if not isinstance(child_aliases, list):
+        raise ShouldBeList(child_aliases)
 
     # parent_alias_lists = map(get_tag_parents_for_a,child_aliases)
     parent_alias_lists = [get_tag_parents_for_a(x) for x in child_aliases]
@@ -2208,11 +2208,12 @@ def exist_nugget_a(alias):
     otherwise None."""
     # interactions[exist_nugget_a] = ''
 
-    if isinstance(alias,unicode): alias = str(alias)
+    # if isinstance(alias,unicode): alias = str(alias)
 
-    if not isinstance(alias,str):
-        if fsqa.use_lisp: lisp.message(str(alias.__class__))
-        raise ShouldBeStr
+    if isinstance(alias,str):
+        alias = unicode(alias)
+    if not isinstance(alias,unicode):
+        raise ShouldBeUnicode
 
     if len(alias)==0:
         return None
@@ -2247,16 +2248,15 @@ def add_ext(filename):
     """
 
     ext = fsqa.file_ext
-    
-    if not isinstance(ext,str):
-        raise ShouldBeStr
+
+    if isinstance(filename,str):
+        filename = unicode(filename)
+    if isinstance(ext,str):
+        ext = unicode(ext)
 
     if ext[0]=='.':
         raise ShouldBeNoDot
-    ext = '.' + ext
-
-    if not isinstance(filename,str):
-        raise ShouldBeStr
+    ext = u'.' + ext
 
     if has_ext(filename):
         raise NeedsNoExtension
@@ -2274,10 +2274,14 @@ def remove_ext(filename):
 
     ext = fsqa.file_ext
 
-    if not isinstance(ext,str):
-        raise ShouldBeStr
-    if not isinstance(filename,str):
-        raise ShouldBeStr
+    if isinstance(ext,str):
+        ext = unicode(ext)
+    if isinstance(filename,str):
+        filename = unicode(filename)
+    if not isinstance(ext,unicode):
+        raise ShouldBeUnicode(ext)
+    if not isinstance(filename,unicode):
+        raise ShouldBeUnicode(filename)
 
     if ext[0]=='.':
         raise ShouldBeNoDot
@@ -2318,7 +2322,7 @@ def put_ext(ext):
     """
 
     if not isinstance(ext,str):
-        raise ShouldBeStr
+        raise ShouldBeUnicode
     if ext[0]=='.':
         raise ShouldBeNoDot
 
@@ -2385,7 +2389,7 @@ def get_filename(nugid):
           nugid
 
     try:
-        filename = str(fsqa.db.execute(sel).fetchone()[0])
+        filename = fsqa.db.execute(sel).fetchone()[0]
     except:
         filename = None
 
@@ -2410,7 +2414,8 @@ def put_filename(nugid,filename):
     if (nugid==None) | (filename==None): raise CantBeNone
     try: nugid = int(nugid)
     except: raise ShouldBeInt
-    if not isinstance(filename,str): raise ShouldBeStr
+    if isinstance(filename, str): filename = unicode(filename)
+    if not isinstance(filename, unicode): raise ShouldBeUnicode
 
     if not has_ext(filename):
         raise NeedsExtension
@@ -2531,8 +2536,8 @@ def put_tag_parents_delim_slash(child_nugid,parent_aliases):
     # here, because PUT_TAG_PARENTS_DELIM will strip each
     # component for us, but let's be neat anyway
     parent_aliases_list = [x.strip() for x in parent_aliases.split('/')]
-    parent_aliases_semicolon_str = string.join(
-        parent_aliases_list, ';')
+    parent_aliases_semicolon_str = u';'.join(
+        parent_aliases_list)
 
     return put_tag_parents_delim(child_nugid, parent_aliases_semicolon_str)
         
@@ -2564,8 +2569,8 @@ def put_tag_parents_delim(child_nugid,parent_aliases):
         parent_aliases = parent_aliases.replace('  ',' ')
 
     # split the semicolon-delimited list apart
-    # parent_aliases = map(string.strip,
-    #                      string.split(parent_aliases,';'))
+    # parent_aliases = map(unicode.strip,
+    #                      unicode.split(parent_aliases,';'))
     parent_aliases = [x.strip() for x in parent_aliases.split(';')]
 
     # for each of the tag-parents being added, create it if
@@ -2588,8 +2593,8 @@ def put_tag_parents_delim3(child_nugid,parent_aliases):
     # make sure child_nugid is int
     child_nugid = int(child_nugid)
 
-    if not isinstance(parent_aliases,str):
-        raise ShouldBeStr
+    if not isinstance(parent_aliases,unicode):
+        raise ShouldBeUnicode
     
     # split the semicolon-delimited list apart and remove
     # white space around each alias
@@ -2660,8 +2665,8 @@ def put_tag_parents_delim2(child_nugid,parent_aliases):
     s = select([fsqa.aliases.c.alias],fsqa.aliases.c.nugid==child_nugid)
     child_alias = s.execute().fetchall()[0].alias
 
-    if not isinstance(parent_aliases,str):
-        raise ShouldBeStr
+    if not isinstance(parent_aliases,unicode):
+        raise ShouldBeUnicode
     
     # split the semicolon-delimited list apart and remove
     # white space around each alias
@@ -2751,8 +2756,8 @@ def put_tag_children_delim(parent_nugid,child_aliases):
     remove_tag_children_from(parent_nugid)
 
     # split the semicolon-delimited list apart
-    # child_aliases = map(string.strip,
-    #                     string.split(child_aliases,';'))
+    # child_aliases = map(unicode.strip,
+    #                     unicode.split(child_aliases,';'))
     child_aliases = [x.strip() for x in child_aliases.split(';')]
 
     # for each of the tag-children being added, create it if
@@ -2799,8 +2804,10 @@ def get_nugid_from_alias(al, allow_multiple=False):
     # fail gracefully if we're fed empty air
     if not al:
         return None
-    if not isinstance(al,str):
-        raise ShouldBeStr
+    if isinstance(al,str):
+        al = unicode(al)
+    if not isinstance(al,unicode):
+        raise ShouldBeUnicode
     if len(al)==0:
         return None
 
@@ -2894,14 +2901,14 @@ def get_all_aliases(nugids_to_exclude=None):
 
         # make sure they're all strings
         # nugids_to_exclude = map(str,nugids_to_exclude)
-        nugids_to_exclude = [str(x) for x in nugids_to_exclude]
+        nugids_to_exclude = [x for x in nugids_to_exclude]
 
         sel = sel + \
               ' where nugid not in (' + \
-              string.join(nugids_to_exclude,', ') + \
-              ')'
+              u', '.join(nugids_to_exclude) + \
+              u')'
     aliases = fsqa.db.execute(sel).fetchall()
-    return [str(x[0]) for x in aliases]
+    return [unicode(x[0]) for x in aliases]
 
 
 ############################################################
@@ -2936,7 +2943,7 @@ def get_all_filenames():
     filenames = fsqa.db.execute(sel).fetchall()
     # turning this into a set implicitly throws away any
     # duplicates
-    filenames = set( [str(x[0]) for x in filenames] )
+    filenames = set( [x[0] for x in filenames] )
     filenames.discard(None)
 
     return list(filenames)
@@ -2959,8 +2966,10 @@ def change_filename_from(old,new):
     if (old==None) | (new==None):
         raise CantBeNone
 
-    if (not isinstance(old,str)) | (not isinstance(new,str)):
-        raise ShouldBeStr
+    if not isinstance(old,unicode):
+        raise ShouldBeUnicode(old)
+    if not isinstance(new,unicode):
+        raise ShouldBeUnicode(new)
 
     if (old=='') | (new==''):
         raise CantBeEmptyString
@@ -3014,8 +3023,9 @@ def get_nugids_sql(sel):
 ############################################################
 def remove_nugget_a(alias):
 
-    if not isinstance(alias,str):
-        raise ShouldBeStr
+    if isinstance(alias, str): alias = unicode(alias)
+    if not isinstance(alias,unicode):
+        raise ShouldBeUnicode
 
     try:
         return remove_nugget(get_nugid_from_alias(alias))
@@ -3154,9 +3164,9 @@ def get_last_modtime(nugid):
     modtime = get_last_modtime_as_dt(nugid)
 
     if modtime==None:
-        modtime = ''
+        modtime = u''
     else:
-        modtime = str(modtime)
+        modtime = unicode(modtime)
         # strip away the microseconds
         # modtime = modtime[:-7]
 
@@ -3171,7 +3181,7 @@ def dt_from_str(dts):
     object, e.g.
 
     dt = datetime.datetime.now()
-    dt == dt_from_str( str(dt) )
+    dt == dt_from_str( unicode(dt) )
     """
 
     # str(datetime.datetime.now()) = '2007-04-09 02:07:47.293374'
@@ -3208,10 +3218,10 @@ def list_unaliased():
     for id in ids:
         a = get_alias_from_nugid(id)
         if a==None:
-            print nugid
+            print id
             continue
         if a[0]=='#':
-            print str(id) + ': ' + a
+            print unicode(id) + ': ' + a
 
 
 ############################################################
@@ -3319,12 +3329,11 @@ def all(lst):
 
 
 ############################################################
-def all_str(lst):
+def all_unicode(lst):
     """
     Returns True if all the items in LST are strings.
     """
-
-    return all([isinstance(x,str) for x in lst])
+    return all([isinstance(x,unicode) for x in lst])
 
 
 
@@ -3349,7 +3358,7 @@ def list_items_type(lst):
     if not isinstance(lst,list):
         raise ShouldBeList
 
-    strings = all_str(lst)
+    strings = all_unicode(lst)
     ints = all_int(lst)
 
     if strings:
@@ -3420,9 +3429,8 @@ def fulltext_whittle_nugids(aliases, patterns, case_sensitive=False):
 
     if len(aliases)>0:
         # create a quote-delimited aliases string
-        aliases_str = string.join( \
-            ['"%s"' % x for x in aliases],
-            ',')
+        aliases_str = u','.join( \
+            ['"%s"' % x for x in aliases])
         sel = """
         SELECT DISTINCT filename FROM nuggets,aliases WHERE
         nuggets.id=aliases.nugid AND
@@ -3510,9 +3518,8 @@ def fulltext(filenames, patterns, case_sensitive=False):
         if pat[-1]=='"':
             pat = pat[0:-1]
             
-    pattern_str = string.join( \
-        [x.strip() for x in patterns], \
-        ';')
+    pattern_str = u';'.join( \
+        [x.strip() for x in patterns])
 
     if len(filenames)>0:
 
@@ -3523,9 +3530,8 @@ def fulltext(filenames, patterns, case_sensitive=False):
         # escaped by backslashes), and each file prepended by the
         # database_dir, e.g.
         # /blah/test0.freex /blah/hello\ world.freex
-        fnames_str = string.join(
-            [fsqa.database_dir + '/' + x for x in filenames],
-            ' ')
+        fnames_str = u' '.join(
+            [fsqa.database_dir + '/' + x for x in filenames])
 
         # the -l says to just return filenames only (no text
         # context)
@@ -3565,7 +3571,7 @@ def fulltext(filenames, patterns, case_sensitive=False):
         # strip away the path to yield just the filename for
         # each of the files in out_str
         found_files = [os.path.basename(x) for x in \
-                       string.split(out_str.strip(),'\n')]
+                       u'\n'.split(out_str.strip())]
 
     else:
         # if you run the above on an empty string, you get
@@ -3717,7 +3723,7 @@ def exist_nugget_multi(nugs):
         crits = []
         for nugid in nugids:
             crits.append('nugid="%i"' % nugid)
-        sel = sel + string.join(crits,' OR ')
+        sel = sel + u' OR '.join(crits)
         
         results = fsqa.db.execute(sel).fetchall()
         found_nugids = [x[0] for x in results]
@@ -3735,7 +3741,7 @@ def exist_nugget_multi(nugs):
         crits = []
         for al in aliases:
             crits.append('alias="%s"' % al)
-        sel = sel + string.join(crits,' OR ')
+        sel = sel + u' OR '.join(crits)
         
         results = fsqa.db.execute(sel).fetchall()
         found_aliases = [x[01] for x in results]
@@ -3792,8 +3798,8 @@ def get_nugid_from_alias_multi(aliases):
 
     # aliases must be a list containing strings
     lit = list_items_type(aliases)
-    if lit != str:
-        raise ShouldBeStr
+    if lit != unicode:
+        raise ShouldBeUnicode
 
     # get a boolean list of which aliases exist
     # exists = exist_nugget_multi(aliases)
@@ -3810,12 +3816,12 @@ def get_nugid_from_alias_multi(aliases):
     #     crits = []
     #     for al in aliases:
     #         crits.append('alias="%s"' % al)
-    #     sel = sel + string.join(crits,' OR ')
+    #     sel = sel + unicode.join(crits,' OR ')
     #     found_nugids = fsqa.db.execute(sel).fetchall()
     #     found_nugids = [x[0] for x in found_nugids]
 
     #     sel = 'select nugid,alias from aliases where alias in (%s)' \
-    #           % string.join(aliases,' ')
+    #           % unicode.join(aliases,' ')
     #     found_nugids = fsqa.db.execute(sel).fetchall()
     #     found_nugids = [x[0] for x in found_nugids]
 

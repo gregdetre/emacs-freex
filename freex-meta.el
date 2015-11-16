@@ -971,6 +971,9 @@ highest overlay at point."
   "Returns a query like 'emacs//*' or 'loci1/journal -
 070906'. Doesn't actually run that query to see what it returns."
 
+  ;; store the current state of partial-completion-mode,
+  ;; because we're going to turn it off for the duration of
+  ;; this function
   (let (
         ;; we're shadowing the real
         ;; minibuffer-local-completion-map with this local
@@ -1001,6 +1004,7 @@ highest overlay at point."
            in-in ;; initial-input
            freex-meta-complete-alias-hist))
     
+    ;; set the keymap back to whatever it was
     (setq minibuffer-local-completion-map mlcm)
     
     query))

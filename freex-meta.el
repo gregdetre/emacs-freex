@@ -513,7 +513,7 @@ inserting them until you give it a blank one or press C-g."
     (setq new-alias
           (freex-sqlalchemy-add-alias
            id
-           (freex-meta-complete-alias nil "New alias: ")))
+           (freex-meta-complete-alias "New alias: " nil)))
     ;; and as long as the user keeps providing non-blank
     ;; legitimate aliases, keep on askin'
     (while (> (length new-alias) 0)

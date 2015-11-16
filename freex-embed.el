@@ -1059,7 +1059,7 @@ should get automatically fontified."
   (interactive)
   ;; ask the user to choose an alias (requires match)
   (let ((filename
-         (freex-meta-complete-alias-filename "Embed: " t)))
+         (freex-meta-complete-alias-filename "Embed: ")))
 
     ;; don't prepend the freex-mode-dir, because i think
     ;; somehow the insert-element-at-point function deals

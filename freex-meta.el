@@ -1076,10 +1076,10 @@ nuggets."
 
 
 
-(defun freex-meta-complete-alias-filename (&optional prompt require-match)
+(defun freex-meta-complete-alias-filename (&optional prompt)
   "Asks the user for an alias, and then returns its filename."
   (freex-sqlalchemy-get-filename-a
-   (freex-meta-complete-alias prompt require-match)))
+   (freex-meta-complete-alias prompt t)))
 
 
 

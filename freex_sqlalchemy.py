@@ -36,7 +36,7 @@
 import os, sys
 import collections
 import datetime, time
-import string, re
+import re, string
 import random
 import subprocess
 # import numpy as n
@@ -288,7 +288,7 @@ class Fsqa(object):
             os.path.abspath(database_file))
 
         if not len(self.database_file):
-            raise 'Can''t use an empty database_file'
+            raise Exception('Can''t use an empty database_file')
 
         db_fullfile = os.path.join(
             self.database_dir,self.database_file)
@@ -917,8 +917,8 @@ def get_contents_a(alias):
     ''' % alias
 
     content = fsqa.db.execute(sel).fetchone()
-    if content==None:
-        raise NonexistentAlias
+    if content is None:
+        raise NonexistentAlias(alias)
 
     return str(content[0])
 
@@ -1025,7 +1025,7 @@ def get_alias_from_nugid(nugid):
 def get_tag_parents_delim_a(child_alias):
     # interactions[get_tag_parents_delim_a] = ''
 
-    return get_tag_parents_delim( \
+    return get_tag_parents_delim(
         get_nugid_from_alias(child_alias) )
 
 
@@ -1033,7 +1033,7 @@ def get_tag_parents_delim_a(child_alias):
 def get_tag_parents_delim(child_nugid):
     # interactions[get_tag_parents_delim] = ''
 
-    parent_aliases = get_tag_parents_for_a( \
+    parent_aliases = get_tag_parents_for_a(
         get_alias_from_nugid(child_nugid) )
 
     return string.join(parent_aliases,'; ')
@@ -1044,7 +1044,7 @@ def get_tag_parents_delim(child_nugid):
 def get_tag_parents_delim_slash(child_nugid, delim='/'):
     # interactions[get_tag_parents_delim] = ''
 
-    parent_aliases = get_tag_parents_for_a( \
+    parent_aliases = get_tag_parents_for_a(
         get_alias_from_nugid(child_nugid) )
 
     parent_aliases_slash = string.join(parent_aliases,delim)
@@ -1060,7 +1060,7 @@ def get_tag_parents_delim_slash(child_nugid, delim='/'):
 def get_tag_children_delim_a(parent_alias):
     # interactions[get_tag_children_delim_a] = ''
 
-    return get_tag_children_delim( \
+    return get_tag_children_delim(
         get_nugid_from_alias(parent_alias) )
 
 
@@ -2611,7 +2611,7 @@ def put_tag_parents_delim3(child_nugid,parent_aliases):
         # see if it's in the new list of parent aliases
         if any([x in parent_aliases for x in tag_parent.dest_nugget.aliases]):
             # keep it and remove
-            toremove
+            # TODO? toremove
             pass
         else:
             # delete it from the list
@@ -3093,9 +3093,9 @@ def add_timestamp(nugid,action,
 
     # check ACTION is an integer
     if action!=int(action):
-        raise 'Action id must be an integer'
+        raise Exception('Action id must be an integer')
 
-    if action<0 | action>max_action:
+    if action<0: # | action>max_action:
         raise IllegalActionId
 
     ins = 'insert into nugget_history values ' + \
@@ -3827,8 +3827,9 @@ def get_nugid_from_alias_multi(aliases):
     cur = 0
     for a in xrange(0,len(aliases)):
         if exists[a]:
-            nugids[a] = found_nugids[cur]
-            cur = cur + 1
+            raise Exception('what should found_nugids be below?')
+            # nugids[a] = found_nugids[cur]
+            # cur = cur + 1
 
     return nugids
 

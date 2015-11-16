@@ -411,11 +411,11 @@ class FsqaTests(BaseTests):
 
 
         second_order_cases = (
+            (u'', get_all_aliases()),
             
             (u'nug', get_all_aliases()),
 
             # this should be exactly the same as above
-            ('nugid1', ['nugid1','nugid1a','nugid1b','nugid1c']),
             (u'nugid1', ['nugid1','nugid1a','nugid1b','nugid1c']),
             # the same is true if the stub itself doesn't match anything
             (u'blah', []),
@@ -731,6 +731,7 @@ class FsqaTests(BaseTests):
                           get_or_create_nugid_from_alias,
                           1)
         self.assertEquals((None,False),
+                         get_or_create_nugid_from_alias(u''))
         self.assertEquals((None,False),
                          get_or_create_nugid_from_alias(None))
         
@@ -2148,7 +2149,7 @@ class FsqaTests(BaseTests):
         self.assertEquals(add_ext(u''),'.freex')
         self.assertEquals(add_ext(u'blah.free'),'blah.free.freex')
 
-        self.assertRaises(ShouldBeStr,add_ext,100)
+        self.assertRaises(ShouldBeUnicode,add_ext,100)
 
         self.assertRaises(NeedsNoExtension,add_ext,'blah.freex')
 

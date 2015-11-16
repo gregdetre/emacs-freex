@@ -1899,7 +1899,7 @@ def edit_tag_parents_in_minibuffer_complete(inp):
         # aliases. that'll learn 'em
         return get_all_aliases()
 
-    inp_parts = u'/'.split(inp)
+    inp_parts = unicode.split(inp, u'/')
 
     # we need to make sure not to prepend a '/' in the case
     # where there are no preceding aliases, e.g. if the user

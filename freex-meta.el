@@ -953,12 +953,7 @@ highest overlay at point."
         (setq id (freex-embed-get-id-at-point)))))
   
   (if mark-active
-      ;; this could probably be done in one statement
-      ;; without the let, but...
-      (let* ((m1 (point))
-             (m2 (mark))
-             (ov
-              (freex-embed-define-region-as-nugget m1 m2))))
+      (freex-embed-define-region-as-nugget (point) (mark))
     (freex-meta-insert-metadata-here)))
 
 

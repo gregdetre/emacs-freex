@@ -1045,7 +1045,9 @@ nuggets."
       (find-file filename)
       ;; add the nugget name as a level-1 heading at the top
       ;; of the new nugget
-      (freex-meta-new-file-header query))
+      (freex-meta-new-file-header query)
+      (clear-visited-file-modtime)
+      )
       ;;(insert (concat "<sect level=\"1\">" query "</sect>\n\n")))
       ;; (error "No nuggets matching that query were found"))
 

@@ -2966,6 +2966,10 @@ def change_filename_from(old,new):
     if (old==None) | (new==None):
         raise CantBeNone
 
+    if isinstance(old, str):
+        old = unicode(old)
+    if isinstance(new, str):
+        new = unicode(new)
     if not isinstance(old,unicode):
         raise ShouldBeUnicode(old)
     if not isinstance(new,unicode):
